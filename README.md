@@ -1,7 +1,7 @@
-epq_datatypes
+pg_datatypes
 =====
 
-An OTP library
+Erlang library for encoding and decoding postgres data types.
 
 Build
 -----
