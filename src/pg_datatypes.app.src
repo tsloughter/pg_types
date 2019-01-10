@@ -1,0 +1,15 @@
+{application, pg_datatypes,
+ [{description, "Erlang library for encoding and decoding postgres data types"},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {applications,
+   [kernel,
+    stdlib
+   ]},
+  {env,[]},
+  {modules, []},
+
+  {maintainers, []},
+  {licenses, ["Apache 2.0"]},
+  {links, []}
+ ]}.
