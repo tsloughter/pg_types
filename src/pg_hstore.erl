@@ -8,8 +8,7 @@
 %%% @end
 %%% Created : 14 Oct 2017 by Sergey Prokhorov <me@seriyps.ru>
 
--module(pg_codec_hstore).
--behaviour(pg_codec).
+-module(pg_hstore).
 
 -export([init/2, names/0, encode/3, decode/3, decode_text/3]).
 

@@ -1,0 +1,37 @@
+-module(pg_inet).
+
+-export([typsend/0,
+         encode/2,
+         decode/2]).
+
+-define(INET, 2).
+-define(INET6, 3).
+-define(IP_SIZE, 4).
+-define(IP6_SIZE, 16).
+-define(MAX_IP_MASK, 32).
+-define(MAX_IP6_MASK, 128).
+
+typsend() ->
+    [<<"inet_send">>, <<"cidr_send">>].
+
+encode({{_, _, _, _} = IP, Mask}, _) ->
+    Bin = list_to_binary(tuple_to_list(IP)),
+    <<?INET, Mask:8, 1, ?IP_SIZE, Bin/binary>>;
+encode({{_, _, _, _, _, _, _, _} = IP, Mask}, _) ->
+    Bin = << <<X:16>> || X <- tuple_to_list(IP) >>,
+    <<?INET6, Mask:8, 1, ?IP6_SIZE, Bin/binary>>;
+encode({_, _, _, _} = IP, _) ->
+    Bin = list_to_binary(tuple_to_list(IP)),
+    <<?INET, ?MAX_IP_MASK, 0, ?IP_SIZE, Bin/binary>>;
+encode({_, _, _, _, _, _, _, _} = IP, _) ->
+    Bin = << <<X:16>> || X <- tuple_to_list(IP) >>,
+    <<?INET6, ?MAX_IP6_MASK, 0, ?IP6_SIZE, Bin/binary>>.
+
+decode(<<?INET, Mask:8, 1, ?IP_SIZE, Bin/binary>>, _) ->
+    {list_to_tuple(binary_to_list(Bin)), Mask};
+decode(<<?INET6, Mask:8, 1, ?IP6_SIZE, Bin/binary>>, _) ->
+    {list_to_tuple([X || <<X:16>> <= Bin]), Mask};
+decode(<<?INET, ?MAX_IP_MASK, 0, ?IP_SIZE, Bin/binary>>, _) ->
+    list_to_tuple(binary_to_list(Bin));
+decode(<<?INET6, ?MAX_IP6_MASK, 0, ?IP6_SIZE, Bin/binary>>, _) ->
+    list_to_tuple([X || <<X:16>> <= Bin]).
