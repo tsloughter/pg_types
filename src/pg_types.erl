@@ -7,10 +7,12 @@
          lookup_type_info/2,
          update/3]).
 
--type oid() :: integer().
 -include_lib("pg_types.hrl").
 
--export_type([parameters/0]).
+-type oid() :: integer().
+
+-export_type([oid/0,
+              parameters/0]).
 
 -type parameters() :: #{binary() => binary()}.
 
@@ -20,6 +22,7 @@
 
 -callback init(map()) -> {[typsend()], opts()}.
 
+%% encode must return the size at the beginning of the iodata
 -callback encode(term(), type_info()) -> iodata().
 -callback decode(binary(), type_info()) -> term().
 

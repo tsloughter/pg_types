@@ -6,6 +6,8 @@
          encode/2,
          decode/2]).
 
+-include("pg_protocol.hrl").
+
 init(_Opts) ->
     {[<<"bpcharsend">>, <<"textsend">>,
       <<"varcharsend">>, <<"charsend">>,
@@ -13,7 +15,7 @@ init(_Opts) ->
       <<"unknownsend">>, <<"citextsend">>], []}.
 
 encode(Text, _) ->
-    Text.
+    [<<(iolist_size(Text)):?int32>>, Text].
 
 decode(Text, _) ->
     Text.

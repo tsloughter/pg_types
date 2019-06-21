@@ -6,11 +6,13 @@
          encode/2,
          decode/2]).
 
+-include("pg_protocol.hrl").
+
 init(_Opts) ->
     {[<<"int4send">>], []}.
 
 encode(N,  _) ->
-    <<N:1/big-signed-unit:32>>.
+    <<4:?int32, N:?int32>>.
 
-decode(<<N:1/big-signed-unit:32>>, _) ->
+decode(<<N:?int32>>, _) ->
     N.

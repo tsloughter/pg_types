@@ -8,20 +8,22 @@
 
          decode_time/1]).
 
+-include("pg_protocol.hrl").
+
 init(_Opts) ->
     {[<<"time_send">>], []}.
 
 encode(Time, _TypeInfo) ->
-    <<(pg_timestamp:encode_time(Time)):64>>.
+    <<8:?int32, (pg_timestamp:encode_time(Time)):?int64>>.
 
 decode(Bin, _TypeInfo) ->
     decode_time(Bin).
 
-decode_time(<<Time:64/signed-integer>>) ->
+decode_time(<<Time:?int64>>) ->
     Seconds = Time div 1000000,
     USecs = Time rem 1000000,
     decode_time0(Seconds, USecs);
-decode_time(<<Time:64/float>>) ->
+decode_time(<<Time:?float64>>) ->
     Seconds = trunc(Time),
     USecs = round((Time - Seconds) * 1000000),   % Maximum documented PostgreSQL precision is usec.
     decode_time0(Seconds, USecs).

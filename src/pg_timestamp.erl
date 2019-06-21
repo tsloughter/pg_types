@@ -10,6 +10,8 @@
          decode_timestamp/1,
          encode_time/1]).
 
+-include("pg_protocol.hrl").
+
 -define(POSTGRESQL_GD_EPOCH, 730485). % ?_value(calendar:date_to_gregorian_days({2000,1,1}))).
 -define(POSTGRESQL_GS_EPOCH, 63113904000). % ?_value(calendar:datetime_to_gregorian_seconds({{2000,1,1}, {0,0,0}}))).
 
@@ -30,7 +32,7 @@ init(_Opts) ->
     {[<<"timestamp_send">>], []}.
 
 encode(Timestamp, _TypeInfo) ->
-     <<(encode_timestamp(Timestamp)):64>>.
+    <<8:?int32, (encode_timestamp(Timestamp)):?int64>>.
 
 decode(Bin, _TypeInfo) ->
     decode_timestamp(Bin).
@@ -65,9 +67,9 @@ encode_time({H, M, S}) ->
 encode_time({H, M, S}) ->
     ((H * ?MINS_PER_HOUR + M) * ?SECS_PER_MINUTE) + S.
 
-decode_timestamp(<<16#7FFFFFFFFFFFFFFF:64/signed-integer>>) -> infinity;
-decode_timestamp(<<-16#8000000000000000:64/signed-integer>>) -> '-infinity';
-decode_timestamp(<<Timestamp:64/signed-integer>>) ->
+decode_timestamp(<<16#7FFFFFFFFFFFFFFF:?int64>>) -> infinity;
+decode_timestamp(<<-16#8000000000000000:?int64>>) -> '-infinity';
+decode_timestamp(<<Timestamp:?int64>>) ->
     TimestampSecs = Timestamp div 1000000,
     USecs = Timestamp rem 1000000,
     decode_timestamp0(TimestampSecs, USecs).

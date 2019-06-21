@@ -6,6 +6,8 @@
          encode/2,
          decode/2]).
 
+-include("pg_protocol.hrl").
+
 -define(DEC_DIGITS, 4).
 -define(POWER_OF_2_TO_52, 4503599627370496).
 
@@ -13,7 +15,8 @@ init(_Opts) ->
     {[<<"numeric_send">>], []}.
 
 encode(Numeric, _) ->
-    encode_numeric(Numeric).
+    Data = encode_numeric(Numeric),
+    [<<(iolist_size(Data)):?int32>>, Data].
 
 decode(Numeric, _) ->
     decode_numeric_bin(Numeric).
@@ -27,7 +30,7 @@ encode_numeric(Float) ->
     Digits = IntDigits ++ FloatDigits,
     Len = length(Digits),
     NumSign = encode_sign(Sign),
-   numeric_bin(Len, Weight, NumSign, Scale, Digits).
+    numeric_bin(Len, Weight, NumSign, Scale, Digits).
 
 numeric_bin(Len, Weight, Sign, Scale, Digits) ->
     Bin = [<<I:16/unsigned-integer>> || I <- Digits],
@@ -56,16 +59,16 @@ to_binary(Num) when is_binary(Num) ->
 
 to_digits(Coef, Exp, Scale) ->
     {IntParts, FloatParts, Scale1} =
-    case Scale >= 0 of
-        true ->
-            Base = pg_math:pow10(Scale),
-            Int = Coef div Base,
-            Dec = Coef rem Base,
-            {Int, Dec, -Exp};
-        false ->
-            Base = pg_math:pow10(-Scale),
-            {Coef * Base, 0, 0}
-    end,
+        case Scale >= 0 of
+            true ->
+                Base = pg_math:pow10(Scale),
+                Int = Coef div Base,
+                Dec = Coef rem Base,
+                {Int, Dec, -Exp};
+            false ->
+                Base = pg_math:pow10(-Scale),
+                {Coef * Base, 0, 0}
+        end,
 
     IntDigits = encode_digits(IntParts, []),
     FloatDigits = encode_float(FloatParts, Scale1),
@@ -82,7 +85,7 @@ parse_num(Num) ->
     end.
 
 parse_sign(<<"-">>) ->
-      -1;
+    -1;
 parse_sign(_Char) ->
     1.
 
@@ -237,16 +240,16 @@ decimal_to_float(Sign, Num, Den, Exp) ->
     Rem = Num - Quo * Den,
 
     Tmp =
-    case Den bsr 1 of
-        D when Rem > D ->
-            Quo + 1;
-        D when Rem < D ->
-            Quo;
-        _ when (Quo band 1) =:= 1 ->
-            Quo + 1;
-        _ ->
-            Quo
-    end,
+        case Den bsr 1 of
+            D when Rem > D ->
+                Quo + 1;
+            D when Rem < D ->
+                Quo;
+            _ when (Quo band 1) =:= 1 ->
+                Quo + 1;
+            _ ->
+                Quo
+        end,
 
     NewSign = case Sign of
                   -1 -> 1;
@@ -266,8 +269,8 @@ decimal_to_float(Sign, Num, Den, Exp) ->
 
 decode_numeric_int(<<>>, Weight, Acc) -> {Acc, Weight};
 decode_numeric_int(<<Digit:16/integer, Tail/binary>>, Weight, Acc) ->
-     NewAcc = (Acc * ?NBASE) + Digit,
-     decode_numeric_int(Tail, Weight - 1, NewAcc).
+    NewAcc = (Acc * ?NBASE) + Digit,
+    decode_numeric_int(Tail, Weight - 1, NewAcc).
 
 scale(Coef, 0) ->
     Coef;
@@ -276,5 +279,5 @@ scale(Coef, Diff) ->
         true ->
             Coef div pg_math:pow10(-Diff);
         false ->
-             Coef * pg_math:pow10(Diff)
+            Coef * pg_math:pow10(Diff)
     end.

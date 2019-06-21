@@ -6,11 +6,13 @@
          encode/2,
          decode/2]).
 
+-include("pg_protocol.hrl").
+
 init(_Opts) ->
     {[<<"int8send">>], []}.
 
 encode(N, _) ->
-    <<N:1/big-signed-unit:64>>.
+    <<8:?int32, N:?int64>>.
 
-decode(<<N:1/big-signed-unit:64>>, _) ->
+decode(<<N:?int64>>, _) ->
     N.

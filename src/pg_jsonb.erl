@@ -6,13 +6,15 @@
          encode/2,
          decode/2]).
 
+-include("pg_protocol.hrl").
+
 -define(JSONB_VERSION_1, 1).
 
 init(_Opts) ->
     {[<<"jsonb_send">>], []}.
 
 encode(Json, _) ->
-    [<<?JSONB_VERSION_1:8>> | Json].
+    [<<(iolist_size(Json) + 1):?int32, ?JSONB_VERSION_1:?int8>> | Json].
 
-decode(<<?JSONB_VERSION_1:8, Bin/binary>>, _) ->
+decode(<<?JSONB_VERSION_1:?int8, Bin/binary>>, _) ->
     Bin.

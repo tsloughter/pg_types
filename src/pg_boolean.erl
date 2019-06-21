@@ -6,13 +6,15 @@
          encode/2,
          decode/2]).
 
+-include("pg_protocol.hrl").
+
 init(_Opts) ->
     {[<<"boolsend">>], []}.
 
 encode(true, _) ->
-    <<1:1/big-signed-unit:8>>;
+    <<1:?int32, 1:?int8>>;
 encode(false, _) ->
-    <<0:1/big-signed-unit:8>>.
+    <<1:?int32, 0:?int8>>.
 
-decode(<<1:1/big-signed-unit:8>>, _) -> true;
-decode(<<0:1/big-signed-unit:8>>, _) -> false.
+decode(<<1:?int8>>, _) -> true;
+decode(<<0:?int8>>, _) -> false.

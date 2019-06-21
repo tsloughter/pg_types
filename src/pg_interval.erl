@@ -6,13 +6,15 @@
          encode/2,
          decode/2]).
 
+-include("pg_protocol.hrl").
+
 init(_Opts) ->
     {[<<"interval_send">>], []}.
 
 encode({interval, {T, D, M}}, _) ->
-    <<(pg_timestamp:encode_time(T)):64, D:32, M:32>>;
+    <<16:?int32, (pg_timestamp:encode_time(T)):?int64, D:?int32, M:?int32>>;
 encode({T, D, M}, _) ->
-    <<(pg_timestamp:encode_time(T)):64, D:32, M:32>>.
+    <<16:?int32, (pg_timestamp:encode_time(T)):?int64, D:?int32, M:?int32>>.
 
 decode(Time, _) ->
     pg_time:decode_time(Time).

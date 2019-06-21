@@ -6,11 +6,13 @@
          encode/2,
          decode/2]).
 
+-include("pg_protocol.hrl").
+
 init(_Opts) ->
     {[<<"timestamptz_send">>], []}.
 
 encode(Timestamp, _TypeInfo) ->
-    <<(pg_timestamp:encode_timestamp(Timestamp)):64>>.
+    <<8:?int32, (pg_timestamp:encode_timestamp(Timestamp)):?int64>>.
 
 decode(Bin, _TypeInfo) ->
     pg_timestamp:decode_timestamp(Bin).

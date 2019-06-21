@@ -6,15 +6,17 @@
          encode/2,
          decode/2]).
 
+-include("pg_protocol.hrl").
+
 -define(POSTGRESQL_GD_EPOCH, 730485). % ?_value(calendar:date_to_gregorian_days({2000,1,1}))).
 
 init(_Opts) ->
     {[<<"date_send">>], []}.
 
 encode(Date, _TypeInfo) ->
-    encode_date(Date).
+    [<<4:?int32>>, encode_date(Date)].
 
-decode(<<Date:32/signed-integer>>, _TypeInfo) ->
+decode(<<Date:?int32>>, _TypeInfo) ->
     calendar:gregorian_days_to_date(Date + ?POSTGRESQL_GD_EPOCH).
 
 encode_date({Y, M, D}) ->

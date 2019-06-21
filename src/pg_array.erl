@@ -6,6 +6,7 @@
          encode/2,
          decode/2]).
 
+-include("pg_protocol.hrl").
 -include("pg_types.hrl").
 
 init(_Opts) ->
@@ -14,13 +15,13 @@ init(_Opts) ->
 encode(Array, #type_info{pool=Pool, elem_oid=Oid}) ->
     TypeInfo=#type_info{module=Mod} = pg_types:lookup_type_info(Pool, Oid),
     EncodedArrayElements = encode_array_elements(Array, Mod, TypeInfo, []),
-    encode_array_binary(EncodedArrayElements, TypeInfo).
+    Encoded = encode_array_binary(EncodedArrayElements, TypeInfo),
+    [<<(iolist_size(Encoded)):?int32>>, Encoded].
 
 decode(Bin, TypeInfo) ->
     decode_array_bin(Bin, TypeInfo).
 
 %%
-
 
 encode_array_elements([{array, SubArray} | Tail], Mod, TypeInfo, Acc) ->
     SubArrayElements = encode_array_elements(SubArray, Mod, TypeInfo, []),
@@ -29,7 +30,7 @@ encode_array_elements([null | Tail], Mod, TypeInfo, Acc) ->
     encode_array_elements(Tail, Mod, TypeInfo, [null | Acc]);
 encode_array_elements([Element | Tail], Mod, TypeInfo, Acc) ->
     Encoded = Mod:encode(Element, TypeInfo),
-    encode_array_elements(Tail, Mod, TypeInfo, [<<(byte_size(Encoded)):32/integer, Encoded/binary>> | Acc]);
+    encode_array_elements(Tail, Mod, TypeInfo, [Encoded | Acc]);
 encode_array_elements([], _Mod, _TypeInfo, Acc) ->
     lists:reverse(Acc).
 
@@ -41,11 +42,11 @@ encode_array_binary(ArrayElements, #type_info{oid=Oid}) ->
 
 encode_array_binary_row([null | Tail], _HasNull, Acc) ->
     encode_array_binary_row(Tail, true, [<<-1:32/integer>> | Acc]);
-encode_array_binary_row([<<_Size:32/integer, _Val/binary>> = Binary | Tail], HasNull, Acc) ->
-    encode_array_binary_row(Tail, HasNull, [Binary | Acc]);
 encode_array_binary_row([{array, Elements} | Tail], HasNull, Acc) ->
     {NewHasNull, Row} = encode_array_binary_row(Elements, HasNull, []),
     encode_array_binary_row(Tail, NewHasNull, [Row | Acc]);
+encode_array_binary_row([Element | Tail], HasNull, Acc) ->
+    encode_array_binary_row(Tail, HasNull, [Element | Acc]);
 encode_array_binary_row([], HasNull, AccRow) ->
     {HasNull, lists:reverse(AccRow)}.
 
