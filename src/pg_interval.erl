@@ -1,11 +1,13 @@
 -module(pg_interval).
 
--export([typsend/0,
+-behaviour(pg_types).
+
+-export([init/1,
          encode/2,
          decode/2]).
 
-typsend() ->
-    [<<"interval_send">>].
+init(_Opts) ->
+    {[<<"interval_send">>], []}.
 
 encode({interval, {T, D, M}}, _) ->
     <<(pg_timestamp:encode_time(T)):64, D:32, M:32>>;

@@ -1,6 +1,8 @@
 -module(pg_inet).
 
--export([typsend/0,
+-behaviour(pg_types).
+
+-export([init/1,
          encode/2,
          decode/2]).
 
@@ -11,8 +13,8 @@
 -define(MAX_IP_MASK, 32).
 -define(MAX_IP6_MASK, 128).
 
-typsend() ->
-    [<<"inet_send">>, <<"cidr_send">>].
+init(_Opts) ->
+    {[<<"inet_send">>, <<"cidr_send">>], []}.
 
 encode({{_, _, _, _} = IP, Mask}, _) ->
     Bin = list_to_binary(tuple_to_list(IP)),

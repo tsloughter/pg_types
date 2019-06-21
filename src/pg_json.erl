@@ -1,11 +1,13 @@
 -module(pg_json).
 
--export([typsend/0,
+-behaviour(pg_types).
+
+-export([init/1,
          encode/2,
          decode/2]).
 
-typsend() ->
-    <<"json_send">>.
+init(_Opts) ->
+    {[<<"json_send">>], []}.
 
 encode(Json, _) ->
     Json.

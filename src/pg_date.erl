@@ -1,13 +1,15 @@
 -module(pg_date).
 
--export([typsend/0,
+-behaviour(pg_types).
+
+-export([init/1,
          encode/2,
          decode/2]).
 
 -define(POSTGRESQL_GD_EPOCH, 730485). % ?_value(calendar:date_to_gregorian_days({2000,1,1}))).
 
-typsend() ->
-    <<"date_send">>.
+init(_Opts) ->
+    {[<<"date_send">>], []}.
 
 encode(Date, _TypeInfo) ->
     encode_date(Date).

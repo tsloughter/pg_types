@@ -1,14 +1,16 @@
 -module(pg_raw).
 
--export([typsend/0,
+-behaviour(pg_types).
+
+-export([init/1,
          encode/2,
          decode/2]).
 
-typsend() ->
-    [<<"bpcharsend">>, <<"textsend">>,
-     <<"varcharsend">>, <<"charsend">>,
-     <<"byteasend">>,  <<"enum_send">>,
-     <<"unknownsend">>, <<"citextsend">>].
+init(_Opts) ->
+    {[<<"bpcharsend">>, <<"textsend">>,
+      <<"varcharsend">>, <<"charsend">>,
+      <<"byteasend">>,  <<"enum_send">>,
+      <<"unknownsend">>, <<"citextsend">>], []}.
 
 encode(Text, _) ->
     Text.

@@ -1,13 +1,13 @@
 -module(pg_boolean).
 
--include("pg_protocol.hrl").
+-behaviour(pg_types).
 
--export([typsend/0,
+-export([init/1,
          encode/2,
          decode/2]).
 
-typsend() ->
-    [<<"boolsend">>].
+init(_Opts) ->
+    {[<<"boolsend">>], []}.
 
 encode(true, _) ->
     <<1:1/big-signed-unit:8>>;

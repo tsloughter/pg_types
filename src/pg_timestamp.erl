@@ -1,6 +1,8 @@
 -module(pg_timestamp).
 
--export([typsend/0,
+-behaviour(pg_types).
+
+-export([init/1,
          encode/2,
          decode/2,
 
@@ -24,8 +26,8 @@
 -define(USECS_PER_MINUTE, 60000000).
 -define(USECS_PER_SEC, 1000000).
 
-typsend() ->
-    <<"timestamp_send">>.
+init(_Opts) ->
+    {[<<"timestamp_send">>], []}.
 
 encode(Timestamp, _TypeInfo) ->
      <<(encode_timestamp(Timestamp)):64>>.

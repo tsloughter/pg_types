@@ -1,11 +1,13 @@
 -module(pg_uuid).
 
--export([typsend/0,
+-behaviour(pg_types).
+
+-export([init/1,
          encode/2,
          decode/2]).
 
-typsend() ->
-    [<<"uuid_send">>].
+init(_Opts) ->
+    {[<<"uuid_send">>], []}.
 
 encode(<<Uuid:128>>, _) ->
     <<Uuid:128/big-unsigned-integer>>;

@@ -1,14 +1,16 @@
 -module(pg_numeric).
 
--export([typsend/0,
+-behaviour(pg_types).
+
+-export([init/1,
          encode/2,
          decode/2]).
 
 -define(DEC_DIGITS, 4).
 -define(POWER_OF_2_TO_52, 4503599627370496).
 
-typsend() ->
-    [<<"numeric_send">>].
+init(_Opts) ->
+    {[<<"numeric_send">>], []}.
 
 encode(Numeric, _) ->
     encode_numeric(Numeric).

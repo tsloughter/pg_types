@@ -1,11 +1,13 @@
 -module(pg_point).
 
--export([typsend/0,
+-behaviour(pg_types).
+
+-export([init/1,
          encode/2,
          decode/2]).
 
-typsend() ->
-    [<<"point_send">>].
+init(_Opts) ->
+    {[<<"point_send">>], []}.
 
 encode(#{x := X, y := Y}, _) ->
     <<X:1/big-float-unit:64, Y:1/big-float-unit:64>>;

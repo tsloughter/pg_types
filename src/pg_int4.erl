@@ -1,11 +1,13 @@
 -module(pg_int4).
 
--export([typsend/0,
+-behaviour(pg_types).
+
+-export([init/1,
          encode/2,
          decode/2]).
 
-typsend() ->
-    <<"int4send">>.
+init(_Opts) ->
+    {[<<"int4send">>], []}.
 
 encode(N,  _) ->
     <<N:1/big-signed-unit:32>>.

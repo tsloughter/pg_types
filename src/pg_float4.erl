@@ -1,6 +1,8 @@
 -module(pg_float4).
 
--export([typsend/0,
+-behaviour(pg_types).
+
+-export([init/1,
          encode/2,
          decode/2]).
 
@@ -9,8 +11,8 @@
 -define(NAN_PATTERN, <<_:1, 255:8, _:23>>).
 -define(NAN, <<0:1, 255:8, 1:1, 0:22>>).
 
-typsend() ->
-    <<"float4send">>.
+init(_Opts) ->
+    {[<<"float4send">>], []}.
 
 encode(Int, _) when is_integer(Int) ->
     <<(Int * 1.0):1/big-float-unit:32>>;

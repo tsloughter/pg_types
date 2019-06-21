@@ -1,6 +1,8 @@
 -module(pg_float8).
 
--export([typsend/0,
+-behaviour(pg_types).
+
+-export([init/1,
          encode/2,
          decode/2]).
 
@@ -9,8 +11,8 @@
 -define(NAN_PATTERN8, <<_:1, 2047:11, _:52>>).
 -define(NAN8, <<0:1, 2047:11, 1:1, 0:51>>).
 
-typsend() ->
-    <<"float8send">>.
+init(_Opts) ->
+    {[<<"float8send">>], []}.
 
 encode(Int, _) when is_integer(Int) ->
     <<(Int * 1.0):1/big-float-unit:64>>;

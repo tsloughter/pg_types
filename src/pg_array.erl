@@ -1,19 +1,20 @@
 -module(pg_array).
 
--export([typsend/0,
+-behaviour(pg_types).
+
+-export([init/1,
          encode/2,
          decode/2]).
 
--include("pg_datatypes.hrl").
+-include("pg_types.hrl").
 
-typsend() ->
-    [<<"array_send">>].
+init(_Opts) ->
+    {[<<"array_send">>], []}.
 
-encode(Array, #type_info{pool=Pool, array_elem=Oid}) ->
-    {Mod, TypeInfo} = pg_datatypes:lookup_type_module(Pool, Oid),
+encode(Array, #type_info{pool=Pool, elem_oid=Oid}) ->
+    TypeInfo=#type_info{module=Mod} = pg_types:lookup_type_info(Pool, Oid),
     EncodedArrayElements = encode_array_elements(Array, Mod, TypeInfo, []),
     encode_array_binary(EncodedArrayElements, TypeInfo).
-
 
 decode(Bin, TypeInfo) ->
     decode_array_bin(Bin, TypeInfo).
@@ -65,7 +66,8 @@ encode_array_binary_header(Dims, HasNulls, ElementTypeOID) ->
     EncodedDimensions = [<<Dim:32/integer, 1:32/integer>> || Dim <- Dims],
     [<<NDims:32/integer, Flags:32/integer, ElementTypeOID:32/integer>>, EncodedDimensions].
 
-decode_array_bin(<<Dimensions:32/signed-integer, _Flags:32/signed-integer, ElementOID:32/signed-integer, Remaining/binary>>, TypeInfo) ->
+decode_array_bin(<<Dimensions:32/signed-integer, _Flags:32/signed-integer,
+                   _ElementOID:32/signed-integer, Remaining/binary>>, TypeInfo) ->
     {RemainingData, DimsInfo} = lists:foldl(fun(_Pos, {Bin, Acc}) ->
                 <<Nbr:32/signed-integer, LBound:32/signed-integer, Next/binary>> = Bin,
                 {Next, [{Nbr, LBound} | Acc]}
@@ -94,8 +96,8 @@ decode_array_bin_aux(<<>>, _TypeInfo, Acc) ->
     lists:reverse(Acc);
 decode_array_bin_aux(<<-1:32/signed-integer, Rest/binary>>, TypeInfo, Acc) ->
     decode_array_bin_aux(Rest, TypeInfo, [null | Acc]);
-decode_array_bin_aux(<<Size:32/signed-integer, Next/binary>>, TypeInfo=#type_info{pool=Pool, array_elem=ElemOid}, Acc) ->
+decode_array_bin_aux(<<Size:32/signed-integer, Next/binary>>, TypeInfo=#type_info{pool=Pool, elem_oid=ElemOid}, Acc) ->
     {ValueBin, Rest} = split_binary(Next, Size),
-    {Mod, ElemTypeInfo} = pg_datatypes:lookup_type_module(Pool, ElemOid),
-    Value = Mod:decode(ValueBin, ElemTypeInfo),
+    ElemTypeInfo = pg_types:lookup_type_info(Pool, ElemOid),
+    Value = pg_types:decode(ValueBin, ElemTypeInfo),
     decode_array_bin_aux(Rest, TypeInfo, [Value | Acc]).

@@ -1,13 +1,15 @@
 -module(pg_time).
 
--export([typsend/0,
+-behaviour(pg_types).
+
+-export([init/1,
          encode/2,
          decode/2,
 
          decode_time/1]).
 
-typsend() ->
-    <<"time_send">>.
+init(_Opts) ->
+    {[<<"time_send">>], []}.
 
 encode(Time, _TypeInfo) ->
     <<(pg_timestamp:encode_time(Time)):64>>.

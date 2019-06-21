@@ -1,6 +1,6 @@
-{application, pg_datatypes,
+{application, pg_types,
  [{description, "Erlang library for encoding and decoding postgres data types"},
-  {vsn, "0.1.0"},
+  {vsn, "git"},
   {registered, []},
   {applications,
    [kernel,
