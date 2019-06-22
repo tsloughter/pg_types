@@ -33,3 +33,7 @@ Type still to implement:
 * record
 * hstore
 * bit_string
+
+## Acknowledgements
+
+Most types are based on code from [epgsql](https://github.com/epgsql/epgsql), [semiocast/pgsql](https://github.com/semiocast/pgsql) and [postgrex](https://github.com/elixir-ecto/postgrex)
