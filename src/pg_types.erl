@@ -42,17 +42,17 @@ encode(Pool, Value, Oid) ->
 decode(Pool, Value, Oid) ->
     decode(Value, lookup_type_info(Pool, Oid)).
 
-update(Pool, Oids, Parameters) ->
+update(Pool, TypeInfos, Parameters) ->
     {ok, Modules} = application:get_key(pg_types, modules),
     Modules1 = Modules ++ application:get_env(pg_types, modules, []),
-    [add_type(Pool, Module, Oids, Parameters) || Module <- Modules1].
+    [add_type(Pool, Module, TypeInfos, Parameters) || Module <- Modules1].
 
-add_type(Pool, Module, Oids, Parameters) ->
+add_type(Pool, Module, TypeInfos, Parameters) ->
     try Module:init(Parameters) of
         {TypeSends, Config} ->
             [[persistent_term:put({?MODULE, Pool, Oid}, TypeInfo#type_info{module=Module,
                                                                            config=Config})
-              || TypeInfo=#type_info{oid=Oid} <- lookup_typsend(Oids, TypeSend)]
+              || TypeInfo=#type_info{oid=Oid} <- lookup_typsend(TypeInfos, TypeSend)]
              || TypeSend <- TypeSends]
     catch
         _:_ ->
@@ -60,8 +60,8 @@ add_type(Pool, Module, Oids, Parameters) ->
             ok
     end.
 
-lookup_typsend(Oids, TypeSend) ->
-    lists:filter(fun(T) -> T#type_info.typsend =:= TypeSend end, Oids).
+lookup_typsend(TypeInfos, TypeSend) ->
+    lists:filter(fun(T) -> T#type_info.typsend =:= TypeSend end, TypeInfos).
 
 lookup_type_info(Pool, Oid) ->
     case persistent_term:get({?MODULE, Pool, Oid}, undefined) of
