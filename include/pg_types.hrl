@@ -10,5 +10,4 @@
                     input      :: binary(),
                     elem_oid   :: integer(),
                     base_oid   :: integer(),
-                    comp_oids  :: integer()}).
-
+                    comp_oids  :: [integer()]}).
