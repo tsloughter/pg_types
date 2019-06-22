@@ -18,6 +18,8 @@
 init(_Opts) ->
     {[<<"range_send">>], []}.
 
+encode(empty, _) ->
+    [<<1:?int32, ?RANGE_EMPTY>>];
 encode({{LowerInclusive, From}, {UpperInclusive, To}}, #type_info{pool=Pool, base_oid=BaseOid})
   when is_atom(LowerInclusive) ; is_atom(UpperInclusive) ->
     TypeInfo=#type_info{module=Mod} = pg_types:lookup_type_info(Pool, BaseOid),
@@ -40,6 +42,8 @@ encode({{LowerInclusive, From}, {UpperInclusive, To}}, #type_info{pool=Pool, bas
                              {[Mod:encode(To, TypeInfo)], Flags bor ?RANGE_LB_INF};
                          {From, unbound} ->
                              {[Mod:encode(From, TypeInfo)], Flags bor ?RANGE_UB_INF};
+                         %% TODO: could send empty in the case From and To are equal
+                         %% and only lower or upper is inclusive
                          {From, To} ->
                              {[Mod:encode(From, TypeInfo), Mod:encode(To, TypeInfo)], Flags}
                      end,
@@ -50,19 +54,26 @@ encode({From, To}, TypeInfo) ->
 decode(<<?RANGE_EMPTY:?int8>>, _) ->
     empty;
 decode(<<Flags:?int8, Rest/binary>>, #type_info{pool=Pool, base_oid=BaseOid}) ->
-    BaseTypeInfo=#type_info{module=Mod, typlen=Len} = pg_types:lookup_type_info(Pool, BaseOid),
+    case Flags band ?RANGE_EMPTY =/= 0 of
+        true ->
+            empty;
+        false ->
+            BaseTypeInfo = pg_types:lookup_type_info(Pool, BaseOid),
+            decode_range(Flags, Rest, BaseTypeInfo)
+    end.
 
-    {LowerBound, Rest1} = case 0 =/= Flags band ?RANGE_LB_INF of
-                              true -> {unbound, Rest};
-                              _ ->
-                                  <<Len:?int32, From:Len/binary, More/binary>> = Rest,
-                                  {Mod:decode(From, BaseTypeInfo), More}
-                          end,
+decode_range(Flags, Bin, BaseTypeInfo=#type_info{module=Mod, typlen=Len}) ->
+    {LowerBound, Rest} = case 0 =/= Flags band ?RANGE_LB_INF of
+                             true -> {unbound, Bin};
+                             _ ->
+                                 <<Len:?int32, From:Len/binary, More/binary>> = Bin,
+                                 {Mod:decode(From, BaseTypeInfo), More}
+                         end,
     UpperBound = case 0 =/= Flags band ?RANGE_UB_INF of
                      true ->
                          unbound;
                      _ ->
-                         <<L:?int32, To:L/binary>> = Rest1,
+                         <<L:?int32, To:L/binary>> = Rest,
                          Mod:decode(To, BaseTypeInfo)
                  end,
     LowerInclusive = (Flags band ?RANGE_LB_INC) =/= 0,
