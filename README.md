@@ -17,7 +17,6 @@ To find the module for encoding/decoding an oid use `lookup_type_info/2`, passin
 
 ### Incomplete Types
 
-* Range: need to implement inclusive/exclusive bounds. This will likely utilize a 3-tuple like `{1, 4, '(]'}`
 * Timezones: I don't think the `timestamptz` is done
 * Not a type but need to decide on the atoms for and define macros for nan, infinity, -infinity and make sure all types use them
 * Timestamps: currently only supports integer timestamps. Not sure if there is really a reason to support the old float version?
