@@ -1,7 +1,7 @@
 pg_types
 =====
 
-Erlang library for encoding and decoding postgres data types.
+Erlang library for encoding and decoding postgres data types. Used by [pgo](https://github.com/erleans/pgo).
 
 ## How it works
 
