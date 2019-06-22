@@ -63,9 +63,9 @@ encode_time(0) ->
     0;
 encode_time({H, M, S}) ->
     US = trunc(round(S * ?USECS_PER_SEC)),
-    ((H * ?MINS_PER_HOUR + M) * ?SECS_PER_MINUTE) * ?USECS_PER_SEC + US;
-encode_time({H, M, S}) ->
-    ((H * ?MINS_PER_HOUR + M) * ?SECS_PER_MINUTE) + S.
+    ((H * ?MINS_PER_HOUR + M) * ?SECS_PER_MINUTE) * ?USECS_PER_SEC + US.
+%% encode_time({H, M, S}) ->
+%%     ((H * ?MINS_PER_HOUR + M) * ?SECS_PER_MINUTE) + S.
 
 decode_timestamp(<<16#7FFFFFFFFFFFFFFF:?int64>>) -> infinity;
 decode_timestamp(<<-16#8000000000000000:?int64>>) -> '-infinity';

@@ -26,6 +26,9 @@
 -callback encode(term(), type_info()) -> iodata().
 -callback decode(binary(), type_info()) -> term().
 
+-ignore_xref([{decode, 3}, {behaviour_info, 1},
+              {encode, 3}, {encode, 2}, {update, 3}]).
+
 -spec encode(term(), type_info()) -> iodata().
 encode(Value, TypeInfo=#type_info{module=Module}) ->
     Module:encode(Value, TypeInfo).
