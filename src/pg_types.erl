@@ -4,17 +4,19 @@
          decode/2,
          encode/3,
          decode/3,
+         format_error/1,
          lookup_type_info/2,
          update/3]).
 
 -include_lib("pg_types.hrl").
 
 -type oid() :: integer().
+-type error() :: {badarg, {module(), term()}}.
+-type parameters() :: #{binary() => binary()}.
 
 -export_type([oid/0,
+              error/0,
               parameters/0]).
-
--type parameters() :: #{binary() => binary()}.
 
 -type typsend() :: binary().
 -type type_info() :: #type_info{}.
@@ -25,6 +27,10 @@
 %% encode must return the size at the beginning of the iodata
 -callback encode(term(), type_info()) -> iodata().
 -callback decode(binary(), type_info()) -> term().
+
+-callback format_error(term()) -> string().
+
+-optional_callbacks([format_error/1]).
 
 -ignore_xref([{decode, 3}, {behaviour_info, 1},
               {encode, 3}, {encode, 2}, {update, 3}]).
@@ -44,6 +50,10 @@ encode(Pool, Value, Oid) ->
 -spec decode(atom(), binary(), oid()) -> term().
 decode(Pool, Value, Oid) ->
     decode(Value, lookup_type_info(Pool, Oid)).
+
+-spec format_error(error()) -> string().
+format_error({badarg, {Module, Reason}}) ->
+    Module:format_error(Reason).
 
 update(Pool, TypeInfos, Parameters) ->
     {ok, Modules} = application:get_key(pg_types, modules),
