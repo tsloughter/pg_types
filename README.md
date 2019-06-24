@@ -30,7 +30,6 @@ Type still to implement:
 * tid
 * tsvector
 * record
-* hstore
 * bit_string
 
 ## Acknowledgements
