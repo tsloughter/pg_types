@@ -25,11 +25,9 @@ To find the module for encoding/decoding an oid use `lookup_type_info/2`, passin
 
 Type still to implement:
 
-* composite types
 * circle, line, line_segment, path, polygon
 * tid
 * tsvector
-* record
 * bit_string
 
 ## Acknowledgements
