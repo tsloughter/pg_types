@@ -25,9 +25,7 @@ To find the module for encoding/decoding an oid use `lookup_type_info/2`, passin
 
 Type still to implement:
 
-* tid
 * tsvector
-* bit_string
 
 ## Acknowledgements
 

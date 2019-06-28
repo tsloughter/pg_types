@@ -7,4 +7,7 @@
 -define(float32, 1/big-float-unit:32).
 -define(float64, 1/big-float-unit:64).
 
+-define(uint16, 1/big-unsigned-unit:16).
+-define(uint32, 1/big-unsigned-unit:32).
+
 -define(badarg(Reason), {badarg, {?MODULE, Reason}}).
