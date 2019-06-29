@@ -12,7 +12,7 @@
 -define(JSONB_VERSION_1, 1).
 
 init(#{json_config := Config}) ->
-    {[<<"json_send">>], Config};
+    {[<<"jsonb_send">>], Config};
 init(_Opts) ->
     Config = application:get_env(pg_types, json_config, []),
     {[<<"jsonb_send">>], Config}.
