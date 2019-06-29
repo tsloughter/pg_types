@@ -8,6 +8,8 @@
 
 -include("pg_protocol.hrl").
 
+-dialyzer(no_improper_lists).
+
 init(_Opts) ->
     {[<<"lseg_send">>], []}.
 

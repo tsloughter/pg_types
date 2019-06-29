@@ -57,4 +57,4 @@ decode_tuple_no_oids(<<Oid:?int32, Size:?int32, Data:Size/binary, RestData/binar
                      Count, Pool, Types, Acc) ->
     TypeInfo=#type_info{module=Mod} = pg_types:lookup_type_info(Pool, Oid),
     Elem = Mod:decode(Data, TypeInfo),
-    decode_tuple(RestData, Count-1, Pool, Types, [Elem | Acc]).
+    decode_tuple_no_oids(RestData, Count-1, Pool, Types, [Elem | Acc]).

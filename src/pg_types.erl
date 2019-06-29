@@ -6,7 +6,8 @@
          decode/3,
          format_error/1,
          lookup_type_info/2,
-         update/3]).
+         update/3,
+         update/4]).
 
 -include_lib("pg_types.hrl").
 
@@ -55,25 +56,29 @@ decode(Pool, Value, Oid) ->
 format_error({badarg, {Module, Reason}}) ->
     Module:format_error(Reason).
 
+-spec update(atom(), [type_info()], map()) -> persistent_term.
 update(Pool, TypeInfos, Parameters) ->
+    update(Pool, TypeInfos, Parameters, persistent_term).
+
+-spec update(atom(), [type_info()], map(), map() | persistent_term) -> map() | persistent_term.
+update(Pool, TypeInfos, Parameters, ToUpdate) ->
     {ok, Modules} = application:get_key(pg_types, modules),
     Modules1 = Modules ++ application:get_env(pg_types, modules, []),
-    [add_type(Pool, Module, TypeInfos, Parameters) || Module <- Modules1].
+    lists:foldl(fun(Module, Acc) ->
+                        add_type(Pool, Module, TypeInfos, Parameters, Acc)
+                end, ToUpdate, Modules1).
 
-add_type(Pool, Module, TypeInfos, Parameters) ->
+add_type(Pool, Module, TypeInfos, Parameters, ToUpdate) ->
     try Module:init(Parameters) of
         {TypeSends, Config} ->
-            [[persistent_term:put({?MODULE, Pool, Oid}, TypeInfo#type_info{module=Module,
-                                                                           config=Config})
-              || TypeInfo=#type_info{oid=Oid} <- lookup_typsend(TypeInfos, TypeSend)]
-             || TypeSend <- TypeSends]
+            update_for_typesends(Module, Config, TypeSends, Pool, TypeInfos, ToUpdate)
     catch
         _:_ ->
             %% expected for modules that aren't for encode/decode
-            ok
+            ToUpdate
     end.
 
-lookup_typsend(TypeInfos, TypeSend) ->
+lookup_typsends(TypeInfos, TypeSend) ->
     lists:filter(fun(T) -> T#type_info.typsend =:= TypeSend end, TypeInfos).
 
 lookup_type_info(Pool, Oid) ->
@@ -84,3 +89,16 @@ lookup_type_info(Pool, Oid) ->
             TypeInfo
     end.
 
+update_for_typesends(Module, Config, TypeSends, Pool, TypeInfos, ToUpdate) ->
+    lists:foldl(fun(TypeSend, Acc) ->
+                    lists:foldl(fun(TypeInfo, Acc1) ->
+                                        update_entry(Pool, TypeInfo#type_info{module=Module,
+                                                                              config=Config}, Acc1)
+                                end, Acc,  lookup_typsends(TypeInfos, TypeSend))
+                end, ToUpdate, TypeSends).
+
+update_entry(_Pool, TypeInfo=#type_info{oid=Oid}, ToUpdate) when is_map(ToUpdate) ->
+    ToUpdate#{Oid => TypeInfo};
+update_entry(Pool, TypeInfo=#type_info{oid=Oid}, ToUpdate=persistent_term) ->
+    persistent_term:put({?MODULE, Pool, Oid}, TypeInfo),
+    ToUpdate.
