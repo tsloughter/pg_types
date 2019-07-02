@@ -6,11 +6,22 @@
          encode/2,
          decode/2]).
 
+-include("pg_types.hrl").
 -include("pg_protocol.hrl").
 
-init(_Opts) ->
-    {[<<"uuid_send">>], []}.
+-type format() :: binary | string | integer.
+-export_type([format/0]).
 
+init(#{uuid_format := Config}) when Config =:= binary ;
+                                    Config =:= string ;
+                                    Config =:= integer ->
+    {[<<"uuid_send">>], Config};
+init(_Opts) ->
+    Config = application:get_env(pg_types, uuid_format, binary),
+    {[<<"uuid_send">>], Config}.
+
+encode(<<>>, _) ->
+    <<-1:32/integer>>;
 encode(<<Uuid:?int128>>, _) ->
     <<16:?int32, Uuid:?int128>>;
 encode(Uuid, _) when is_integer(Uuid) ->
@@ -24,13 +35,10 @@ encode(Uuid, _) when is_binary(Uuid) ->
     Int = erlang:binary_to_integer(Hex, 16),
     <<16:?int32, Int:?int128>>.
 
-decode(<<U0:32, U1:16, U2:16, U3:16, U4:48>>, _) ->
+decode(Uuid, #type_info{config=binary}) ->
+    Uuid;
+decode(<<U0:32, U1:16, U2:16, U3:16, U4:48>>, #type_info{config=string}) ->
     Format = "~8.16.0b-~4.16.0b-~4.16.0b-~4.16.0b-~12.16.0b",
-    iolist_to_binary(io_lib:format(Format, [U0, U1, U2, U3, U4])).
-
-
-%% decode_value_bin(?UUIDOID, Value, _OIDMap, _DecodeOptions) ->
-%%     <<UUID_A:32/integer, UUID_B:16/integer, UUID_C:16/integer, UUID_D:16/integer, UUID_E:48/integer>> = Value,
-%%     UUIDStr = io_lib:format("~8.16.0b-~4.16.0b-~4.16.0b-~4.16.0b-~12.16.0b", [UUID_A, UUID_B, UUID_C, UUID_D, UUID_E]),
-%%     list_to_binary(UUIDStr);
-%%     %% Value;
+    iolist_to_binary(io_lib:format(Format, [U0, U1, U2, U3, U4]));
+decode(<<Uuid:128>>, #type_info{config=integer}) ->
+    Uuid.
