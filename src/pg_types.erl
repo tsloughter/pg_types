@@ -82,7 +82,7 @@ lookup_typsends(TypeInfos, TypeSend) ->
     lists:filter(fun(T) -> T#type_info.typsend =:= TypeSend end, TypeInfos).
 
 lookup_type_info(Pool, Oid) ->
-    case persistent_term:get({?MODULE, Pool, Oid}, undefined) of
+    case persistent_term:get({?MODULE, Pool, Oid}) of
         undefined ->
             unknown_oid;
         TypeInfo ->
