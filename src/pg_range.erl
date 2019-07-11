@@ -20,7 +20,7 @@ init(_Opts) ->
 
 encode(empty, _) ->
     [<<1:?int32, ?RANGE_EMPTY>>];
-encode({{LowerInclusive, From}, {UpperInclusive, To}}, #type_info{pool=Pool, base_oid=BaseOid})
+encode({{From, To}, {LowerInclusive, UpperInclusive}}, #type_info{pool=Pool, base_oid=BaseOid})
   when is_atom(LowerInclusive) ; is_atom(UpperInclusive) ->
     TypeInfo=#type_info{module=Mod} = pg_types:lookup_type_info(Pool, BaseOid),
 
@@ -49,7 +49,7 @@ encode({{LowerInclusive, From}, {UpperInclusive, To}}, #type_info{pool=Pool, bas
                      end,
     [<<(iolist_size(Data) + 1):?int32, Flags1:?int8>>, Data];
 encode({From, To}, TypeInfo) ->
-    encode({{true, From}, {true, To}}, TypeInfo).
+    encode({{From, To}, {true, true}}, TypeInfo).
 
 decode(<<?RANGE_EMPTY:?int8>>, _) ->
     empty;
@@ -78,4 +78,4 @@ decode_range(Flags, Bin, BaseTypeInfo=#type_info{module=Mod, typlen=Len}) ->
                  end,
     LowerInclusive = (Flags band ?RANGE_LB_INC) =/= 0,
     UpperInclusive = (Flags band ?RANGE_UB_INC) =/= 0,
-    {{LowerInclusive, LowerBound}, {UpperInclusive, UpperBound}}.
+    {{LowerBound, UpperBound}, {LowerInclusive, UpperInclusive}}.
