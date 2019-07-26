@@ -1,6 +1,6 @@
 {application, pg_types,
  [{description, "Erlang library for encoding and decoding postgres data types"},
-  {vsn, "git"},
+  {vsn, git},
   {registered, []},
   {applications,
    [kernel,
@@ -9,7 +9,6 @@
   {env,[]},
   {modules, []},
 
-  {maintainers, []},
   {licenses, ["Apache 2.0"]},
   {links, []}
  ]}.
