@@ -29,12 +29,6 @@ To configure if json is to be encoded and decoded by a library, include the json
 * Not a type but need to decide on the atoms for and define macros for nan, infinity, -infinity and make sure all types use them
 * Timestamps: currently only supports integer timestamps. Not sure if there is really a reason to support the old float version?
 
-### Missing Types
-
-Type still to implement:
-
-* tsvector
-
 ## Acknowledgements
 
 Most types are based on code from [epgsql](https://github.com/epgsql/epgsql), [semiocast/pgsql](https://github.com/semiocast/pgsql) and [postgrex](https://github.com/elixir-ecto/postgrex)
