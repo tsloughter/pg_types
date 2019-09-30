@@ -21,6 +21,8 @@ encode(Atom, #type_info{config = atoms} = Args) when is_atom(Atom) ->
 encode(Text, _) ->
     [<<(iolist_size(Text)):?int32>>, Text].
 
+decode(Text, #type_info{config = existing_atoms}) ->
+    binary_to_existing_atom(Text, utf8);
 decode(Text, #type_info{config = atoms}) ->
     binary_to_atom(Text, utf8);
 decode(Text, _) ->
