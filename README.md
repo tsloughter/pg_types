@@ -23,6 +23,10 @@ To configure if json is to be encoded and decoded by a library, include the json
 
 `{pg_types, [{json_config, {jsone, [], [{keys, atom}]}}]}`
 
+To configure if enums should be converted to atoms, set `enum_config` in `pg_types` application environment to the atom `atoms`, or the atom `existing_atoms`. Using `existing_atoms` will result in `binary_to_existing_atom(Value, utf8)` being used to decode values.
+
+`{pg_types, [{enum_config, atoms}]}`
+
 ### Incomplete Types
 
 * Timezones: I don't think the `timestamptz` is done
