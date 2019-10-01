@@ -10,5 +10,12 @@
 %%     round(N * 100).
 
 prop_float8_codec() ->
-    ?FORALL(Val, proper_types:float(),
+    ?FORALL(Val, float64(),
             proper_lib:codec(pg_float8, [], Val)).
+
+float64() ->
+    proper_types:frequency(
+      [{85, proper_types:float()},
+       {5, plus_infinity},
+       {5, minus_infinity},
+       {5, nan}]).
