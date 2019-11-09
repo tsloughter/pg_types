@@ -60,7 +60,7 @@ decode_tuple_no_oids(Data, Count, Pool, Types) ->
 
 decode_tuple_no_oids(<<>>, 0, _, _Types, Acc) ->
     list_to_tuple(lists:reverse(Acc));
-decode_tuple_no_oids(<<-1:?int32, RestData/binary>>,
+decode_tuple_no_oids(<<_Oid:?int32, -1:?int32, RestData/binary>>,
                      Count, Pool, Types, Acc) ->
     Elem = null,
     decode_tuple_no_oids(RestData, Count-1, Pool, Types, [Elem | Acc]);
