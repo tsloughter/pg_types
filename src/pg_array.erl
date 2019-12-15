@@ -12,8 +12,7 @@
 init(_Opts) ->
     {[<<"array_send">>], []}.
 
-encode(Array, #type_info{pool=Pool, elem_oid=Oid}) ->
-    TypeInfo=#type_info{module=Mod} = pg_types:lookup_type_info(Pool, Oid),
+encode(Array, #type_info{elem_type=TypeInfo=#type_info{module=Mod}}) ->
     EncodedArrayElements = encode_array_elements(Array, Mod, TypeInfo, []),
     Encoded = encode_array_binary(EncodedArrayElements, TypeInfo),
     [<<(iolist_size(Encoded)):?int32>>, Encoded].
@@ -97,8 +96,7 @@ decode_array_bin_aux(<<>>, _TypeInfo, Acc) ->
     lists:reverse(Acc);
 decode_array_bin_aux(<<-1:32/signed-integer, Rest/binary>>, TypeInfo, Acc) ->
     decode_array_bin_aux(Rest, TypeInfo, [null | Acc]);
-decode_array_bin_aux(<<Size:32/signed-integer, Next/binary>>, TypeInfo=#type_info{pool=Pool, elem_oid=ElemOid}, Acc) ->
+decode_array_bin_aux(<<Size:32/signed-integer, Next/binary>>, TypeInfo=#type_info{elem_type=ElemTypeInfo}, Acc) ->
     {ValueBin, Rest} = split_binary(Next, Size),
-    ElemTypeInfo = pg_types:lookup_type_info(Pool, ElemOid),
     Value = pg_types:decode(ValueBin, ElemTypeInfo),
     decode_array_bin_aux(Rest, TypeInfo, [Value | Acc]).
