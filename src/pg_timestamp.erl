@@ -37,6 +37,10 @@ encode(Timestamp, _TypeInfo) ->
 decode(Bin, _TypeInfo) ->
     decode_timestamp(Bin).
 
+encode_timestamp(infinity) ->
+    16#7FFFFFFFFFFFFFFF;
+encode_timestamp('-infinity') ->
+    -16#8000000000000000;
 encode_timestamp({Date, Time}) ->
     D = encode_date(Date) - ?POSTGRES_EPOC_JDATE,
     D * ?USECS_PER_DAY + encode_time(Time).
