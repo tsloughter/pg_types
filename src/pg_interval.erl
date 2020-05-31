@@ -16,8 +16,8 @@ encode({interval, {T, D, M}}, _) ->
 encode({T, D, M}, _) ->
     <<16:?int32, (pg_timestamp:encode_time(T)):?int64, D:?int32, M:?int32>>.
 
-decode(Time, _) ->
-    pg_time:decode_time(Time).
+decode(<<T:?int64, D:?int32, M:?int32>>, _) ->
+    {interval, {pg_time:decode_time(<<T:?int64>>), D, M}}.
 
 %% encode_parameter({interval, {T, D, M}}, _, _OIDMap, true) ->
 %%     <<16:32/integer, (encode_time(T, true)):64, D:32, M:32>>;
