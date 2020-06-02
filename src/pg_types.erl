@@ -12,24 +12,23 @@
 -include_lib("pg_types.hrl").
 
 -type oid() :: integer().
--type error() :: {badarg, {module(), term()}}.
 -type parameters() :: #{binary() => binary()}.
-
--export_type([oid/0,
-              error/0,
-              parameters/0]).
 
 -type typsend() :: binary().
 -type type_info() :: #type_info{}.
 -type opts() :: term().
--type reason() :: #{error := atom(),
-                    value := term(),
-                    type_info := type_info()}.
+-type encoding_error() :: #{error := atom(),
+                            value := term(),
+                            type_info := type_info()}.
+
+-export_type([oid/0,
+              encoding_error/0,
+              parameters/0]).
 
 -callback init(map()) -> {[typsend()], opts()}.
 
 %% encode must return the size at the beginning of the iodata
--callback encode(term(), type_info()) -> iodata() | {error, reason()}.
+-callback encode(term(), type_info()) -> iodata().
 -callback decode(binary(), type_info()) -> term().
 
 %% returns a string representation of the Erlang type spec accepted for encoding
@@ -63,7 +62,7 @@ encode(Pool, Value, Oid) ->
 decode(Pool, Value, Oid) ->
     decode(Value, lookup_type_info(Pool, Oid)).
 
--spec format_error(error()) -> string().
+-spec format_error(encoding_error() | term()) -> string().
 format_error(#{error := badarg_encoding,
                value := Value,
                type_info := #type_info{name=Name,
