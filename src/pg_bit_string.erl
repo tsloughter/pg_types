@@ -4,7 +4,8 @@
 
 -export([init/1,
          encode/2,
-         decode/2]).
+         decode/2,
+         type_spec/0]).
 
 -include("pg_protocol.hrl").
 
@@ -25,3 +26,6 @@ encode(Val, _) when is_bitstring(Val) ->
 
 decode(<<Len:?int32, Bits:Len/bits, _/bits>>, _) ->
     Bits.
+
+type_spec() ->
+    "bitstring()".

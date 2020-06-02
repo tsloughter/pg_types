@@ -22,23 +22,34 @@
 -type typsend() :: binary().
 -type type_info() :: #type_info{}.
 -type opts() :: term().
+-type reason() :: #{error := atom(),
+                    value := term(),
+                    type_info := type_info()}.
 
 -callback init(map()) -> {[typsend()], opts()}.
 
 %% encode must return the size at the beginning of the iodata
--callback encode(term(), type_info()) -> iodata().
+-callback encode(term(), type_info()) -> iodata() | {error, reason()}.
 -callback decode(binary(), type_info()) -> term().
 
--callback format_error(term()) -> string().
+%% returns a string representation of the Erlang type spec accepted for encoding
+-callback type_spec() -> string().
 
--optional_callbacks([format_error/1]).
 
 -ignore_xref([{decode, 3}, {behaviour_info, 1},
               {encode, 3}, {encode, 2}, {update, 3}]).
 
 -spec encode(term(), type_info()) -> iodata().
 encode(Value, TypeInfo=#type_info{module=Module}) ->
-    Module:encode(Value, TypeInfo).
+    try
+        Module:encode(Value, TypeInfo)
+    catch
+        error:function_clause ->
+            erlang:error(#{error => badarg_encoding,
+                           module => ?MODULE,
+                           value => Value,
+                           type_info => TypeInfo})
+    end.
 
 -spec decode(binary(), type_info()) -> term().
 decode(Value, TypeInfo=#type_info{module=Module}) ->
@@ -53,8 +64,15 @@ decode(Pool, Value, Oid) ->
     decode(Value, lookup_type_info(Pool, Oid)).
 
 -spec format_error(error()) -> string().
-format_error({badarg, {Module, Reason}}) ->
-    Module:format_error(Reason).
+format_error(#{error := badarg_encoding,
+               value := Value,
+               type_info := #type_info{name=Name,
+                                       module=Module}}) ->
+    io_lib:format("Error encoding type ~s. Expected, ~s. Got, ~p.", [Name,
+                                                                     Module:type_spec(),
+                                                                     Value]);
+format_error(Error) ->
+    io_lib:format("Unknown error ~p", [Error]).
 
 -spec update(atom(), [type_info()], map()) -> ok.
 update(Pool, TypeInfos, Parameters) ->

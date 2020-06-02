@@ -4,7 +4,8 @@
 
 -export([init/1,
          encode/2,
-         decode/2]).
+         decode/2,
+         type_spec/0]).
 
 -include("pg_types.hrl").
 -include("pg_protocol.hrl").
@@ -27,6 +28,12 @@ decode(<<_:?int32, Data/binary>>, #type_info{pool=Pool,
                                              comp_types=CompTypes}) ->
     Types = [],
     decode_tuple(Data, CompTypes, Pool, Types).
+
+%% TODO: can make a better type spec if we pass in the TypeInfo and compose
+%%       type_spec's from each type in the comp_types together
+type_spec() ->
+    "tuple()".
+
 %%
 
 encode_tuple(Elems, CompTypes, Pool) ->

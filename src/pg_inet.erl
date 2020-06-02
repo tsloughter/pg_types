@@ -4,7 +4,8 @@
 
 -export([init/1,
          encode/2,
-         decode/2]).
+         decode/2,
+         type_spec/0]).
 
 -include("pg_protocol.hrl").
 
@@ -39,3 +40,7 @@ decode(<<?INET, ?MAX_IP_MASK, 0, ?IP_SIZE, Bin/binary>>, _) ->
     list_to_tuple(binary_to_list(Bin));
 decode(<<?INET6, ?MAX_IP6_MASK, 0, ?IP6_SIZE, Bin/binary>>, _) ->
     list_to_tuple([X || <<X:16>> <= Bin]).
+
+type_spec() ->
+    "{0..255, 0..255, 0..255, 0..255} | "
+    "{0..65535, 0..65535, 0..65535, 0..65535, 0..65535, 0..65535, 0..65535, 0..65535}".

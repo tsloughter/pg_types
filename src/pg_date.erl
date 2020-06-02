@@ -4,7 +4,8 @@
 
 -export([init/1,
          encode/2,
-         decode/2]).
+         decode/2,
+         type_spec/0]).
 
 -include("pg_protocol.hrl").
 
@@ -21,3 +22,6 @@ decode(<<Date:?int32>>, _TypeInfo) ->
 
 encode_date(Date) ->
     calendar:date_to_gregorian_days(Date) - ?POSTGRESQL_GD_EPOCH.
+
+type_spec() ->
+    "{Year::integer() >= 0, Month::1..12, Day::1..31}".

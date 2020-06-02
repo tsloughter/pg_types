@@ -4,7 +4,8 @@
 
 -export([init/1,
          encode/2,
-         decode/2]).
+         decode/2,
+         type_spec/0]).
 
 -include("pg_protocol.hrl").
 -include("pg_types.hrl").
@@ -19,6 +20,9 @@ encode(Array, #type_info{elem_type=TypeInfo=#type_info{module=Mod}}) ->
 
 decode(Bin, TypeInfo) ->
     decode_array_bin(Bin, TypeInfo).
+
+type_spec() ->
+    "[Element::term() | null | {array, SubArray}]".
 
 %%
 

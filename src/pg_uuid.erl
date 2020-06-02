@@ -4,7 +4,8 @@
 
 -export([init/1,
          encode/2,
-         decode/2]).
+         decode/2,
+         type_spec/0]).
 
 -include("pg_types.hrl").
 -include("pg_protocol.hrl").
@@ -42,3 +43,6 @@ decode(<<U0:32, U1:16, U2:16, U3:16, U4:48>>, #type_info{config=string}) ->
     iolist_to_binary(io_lib:format(Format, [U0, U1, U2, U3, U4]));
 decode(<<Uuid:128>>, #type_info{config=integer}) ->
     Uuid.
+
+type_spec() ->
+    "<<>> | <<_:128>> | integer() | string() | binary()".

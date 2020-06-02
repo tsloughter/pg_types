@@ -4,7 +4,8 @@
 
 -export([init/1,
          encode/2,
-         decode/2]).
+         decode/2,
+         type_spec/0]).
 
 -include("pg_types.hrl").
 -include("pg_protocol.hrl").
@@ -21,3 +22,6 @@ decode(<<X:?float64, Y:?float64, R:?float64>>, _) ->
     #{center => #{x => X,
                   y => Y},
       radius => R}.
+
+type_spec() ->
+    "#{center := #{x := X::integer(), y := Y::integer()}, radius := R::integer()}".

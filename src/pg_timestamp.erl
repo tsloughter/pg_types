@@ -5,7 +5,7 @@
 -export([init/1,
          encode/2,
          decode/2,
-
+         type_spec/0,
          encode_timestamp/1,
          decode_timestamp/1,
          encode_time/1]).
@@ -36,6 +36,9 @@ encode(Timestamp, _TypeInfo) ->
 
 decode(Bin, _TypeInfo) ->
     decode_timestamp(Bin).
+
+type_spec() ->
+    "infinity | '-infinity' | {{Year::integer(), Month::1..12, Day::1..31}, {Hours::integer(), Minutes::integer(), Seconds::()}} | 0".
 
 encode_timestamp(infinity) ->
     16#7FFFFFFFFFFFFFFF;

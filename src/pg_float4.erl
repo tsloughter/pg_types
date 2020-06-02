@@ -4,7 +4,8 @@
 
 -export([init/1,
          encode/2,
-         decode/2]).
+         decode/2,
+         type_spec/0]).
 
 -include("pg_protocol.hrl").
 -include("pg_types.hrl").
@@ -36,3 +37,6 @@ decode(?NEG_INF, _) ->
     minus_infinity;
 decode(?NAN_PATTERN, _) ->
     nan.
+
+type_spec() ->
+    "float()".

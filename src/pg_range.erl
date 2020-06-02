@@ -4,7 +4,8 @@
 
 -export([init/1,
          encode/2,
-         decode/2]).
+         decode/2,
+         type_spec/0]).
 
 -include("pg_protocol.hrl").
 -include("pg_types.hrl").
@@ -61,6 +62,11 @@ decode(<<Flags:?int8, Rest/binary>>, #type_info{pool=Pool, base_oid=BaseOid}) ->
             BaseTypeInfo = pg_types:lookup_type_info(Pool, BaseOid),
             decode_range(Flags, Rest, BaseTypeInfo)
     end.
+
+type_spec() ->
+    "empty | {{From::unbound | term(), To::unbound | term()}, {LowerInclusive::boolean(), UpperInclusive::boolean()}}".
+
+%%
 
 decode_range(Flags, Bin, BaseTypeInfo=#type_info{module=Mod, typlen=Len}) ->
     {LowerBound, Rest} = case 0 =/= Flags band ?RANGE_LB_INF of

@@ -5,7 +5,7 @@
 -export([init/1,
          encode/2,
          decode/2,
-
+         type_spec/0,
          decode_time/1]).
 
 -include("pg_protocol.hrl").
@@ -18,6 +18,9 @@ encode(Time, _TypeInfo) ->
 
 decode(Bin, _TypeInfo) ->
     decode_time(Bin).
+
+type_spec() ->
+    "{Hours::integer(), Minutes::integer(), Seconds::()} | 0".
 
 decode_time(<<Time:?int64>>) ->
     Seconds = Time div 1000000,

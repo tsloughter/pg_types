@@ -4,7 +4,8 @@
 
 -export([init/1,
          encode/2,
-         decode/2]).
+         decode/2,
+         type_spec/0]).
 
 -include("pg_protocol.hrl").
 
@@ -18,3 +19,6 @@ encode(false, _) ->
 
 decode(<<1:?int8>>, _) -> true;
 decode(<<0:?int8>>, _) -> false.
+
+type_spec() ->
+    "true | false".
