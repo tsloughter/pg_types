@@ -16,7 +16,7 @@ encode(Timestamp, _TypeInfo) ->
     <<8:?int32, (pg_timestamp:encode_timestamp(Timestamp)):?int64>>.
 
 decode(Bin, _TypeInfo) ->
-    pg_timestamp:decode_timestamp(Bin).
+    pg_timestamp:decode_timestamp(Bin, float_seconds).
 
 type_spec() ->
     pg_timestamp:type_spec().

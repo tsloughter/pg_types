@@ -13,9 +13,9 @@ init(_Opts) ->
     {[<<"interval_send">>], []}.
 
 encode({interval, {T, D, M}}, _) ->
-    <<16:?int32, (pg_timestamp:encode_time(T)):?int64, D:?int32, M:?int32>>;
+    <<16:?int32, (pg_time:encode_time(T)):?int64, D:?int32, M:?int32>>;
 encode({T, D, M}, _) ->
-    <<16:?int32, (pg_timestamp:encode_time(T)):?int64, D:?int32, M:?int32>>.
+    <<16:?int32, (pg_time:encode_time(T)):?int64, D:?int32, M:?int32>>.
 
 decode(<<T:?int64, D:?int32, M:?int32>>, _) ->
     {interval, {pg_time:decode_time(<<T:?int64>>), D, M}}.

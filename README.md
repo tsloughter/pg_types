@@ -21,17 +21,27 @@ To find the module for encoding/decoding an oid use `lookup_type_info/2`, passin
 
 To configure if json is to be encoded and decoded by a library, include the json library, like `jsone`, in theprojects `deps` list and set `json_config` in `pg_types` application environment to a 3-tuple `{module(), encode_options(), decode_options()}`. For example to use `jsone` and decode keys as atoms:
 
+### Json
+
 `{pg_types, [{json_config, {jsone, [], [{keys, atom}]}}]}`
+
+### Enums
 
 To configure if enums should be converted to atoms, set `enum_config` in `pg_types` application environment to the atom `atoms`, or the atom `existing_atoms`. Using `existing_atoms` will result in `binary_to_existing_atom(Value, utf8)` being used to decode values.
 
 `{pg_types, [{enum_config, atoms}]}`
 
+### Datetimes
+
+Timestamps can be returned as Erlang system time in seconds (as an integer or float):
+
+`{pg_types, [{timestamp_config, float_system_time_seconds | integer_system_time_seconds}]}`
+
+Future plans include allowing this to be set per-query instead of globally.
+
 ### Incomplete Types
 
-* Timezones: I don't think the `timestamptz` is done
 * Not a type but need to decide on the atoms for and define macros for nan, infinity, -infinity and make sure all types use them
-* Timestamps: currently only supports integer timestamps. Not sure if there is really a reason to support the old float version?
 
 ## Acknowledgements
 
