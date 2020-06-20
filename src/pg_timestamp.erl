@@ -18,7 +18,9 @@
 
 %% config options allow timestamp to return seconds since epoch as a float or integer
 %% instead of the datetime tuple format
--type config() :: [] | float_system_time_seconds | integer_system_time_seconds.
+-type config() :: float_system_time_seconds |
+                  integer_system_time_seconds |
+                  integer_system_time_microseconds.
 
 -type hour() :: 0..23.
 -type minute() :: 0..59.
@@ -56,13 +58,15 @@ encode_timestamp({{Year, Month, Day}, {Hours, Minutes, Seconds}}) when is_float(
     US = trunc((Seconds - IntegerSeconds) * 1000000),
     Secs = calendar:datetime_to_gregorian_seconds({{Year, Month, Day},
                                                    {Hours, Minutes, IntegerSeconds}}) - ?POSTGRESQL_GS_EPOCH,
-    (Secs * 1000000) + US.
+    (Secs * 1000000) + US;
+encode_timestamp(SystemTime) when is_integer(SystemTime) ->
+    SystemTime + ((62167219200 - ?POSTGRESQL_GS_EPOCH) * 1000000).
 
 -spec decode_timestamp(binary()) -> datetime().
 decode_timestamp(Bin) ->
     decode_timestamp(Bin, []).
 
--spec decode_timestamp(binary(), config()) -> datetime().
+-spec decode_timestamp(binary(), config() | []) -> datetime().
 decode_timestamp(<<16#7FFFFFFFFFFFFFFF:?int64>>, _) -> infinity;
 decode_timestamp(<<-16#8000000000000000:?int64>>, _) -> '-infinity';
 decode_timestamp(<<Timestamp:?int64>>, float_system_time_seconds) ->
@@ -71,6 +75,8 @@ decode_timestamp(<<Timestamp:?int64>>, float_system_time_seconds) ->
     ((Timestamp div 1000000) + ?POSTGRESQL_GS_EPOCH) - 62167219200 + (USecs / 1000000);
 decode_timestamp(<<Timestamp:?int64>>, integer_system_time_seconds) ->
     ((Timestamp div 1000000) + ?POSTGRESQL_GS_EPOCH) - 62167219200;
+decode_timestamp(<<Timestamp:?int64>>, integer_system_time_microseconds) ->
+    Timestamp + (?POSTGRESQL_GS_EPOCH * 1000000) - (62167219200 * 1000000);
 decode_timestamp(<<Timestamp:?int64>>, _) ->
     TimestampSecs = Timestamp div 1000000,
     USecs = Timestamp rem 1000000,
