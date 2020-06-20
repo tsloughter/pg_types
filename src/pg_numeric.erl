@@ -24,7 +24,7 @@ decode(Numeric, _) ->
 
 %% TODO: it looks like encode/decode forms of nan and infinity don't match
 type_spec() ->
-    "number() | 'NaN".
+    "number() | 'NaN'".
 
 %%
 
@@ -103,6 +103,10 @@ parse_unsigned(<<"infinity">>) ->
 parse_unsigned(<<"snan">>) ->
     {sNaN, 0};
 parse_unsigned(<<"nan">>) ->
+    {qNaN, 0};
+parse_unsigned(<<"sNaN">>) ->
+    {sNaN, 0};
+parse_unsigned(<<"NaN">>) ->
     {qNaN, 0};
 parse_unsigned(Bin) ->
     {Int, Rest} = parse_digits(Bin, []),
