@@ -4,7 +4,8 @@
 
 -export([init/1,
          encode/2,
-         decode/2]).
+         decode/2,
+         type_spec/0]).
 
 -include("pg_protocol.hrl").
 
@@ -27,3 +28,6 @@ decode_points(<<>>, 0) ->
     [];
 decode_points(<<X:64/float, Y:64/float, Rest/binary>>, Count) ->
     [#{x => X, y => Y} | decode_points(Rest, Count-1)].
+
+type_spec() ->
+    "#{vertices := [#{x := X::integer(), y := Y::integer()}]}".

@@ -5,7 +5,7 @@
 -export([init/1,
          encode/2,
          decode/2,
-         format_error/1]).
+         type_spec/0]).
 
 -include("pg_protocol.hrl").
 
@@ -14,16 +14,13 @@ init(_Opts) ->
 
 encode(Map, _) when is_map(Map) ->
     Data = encode_hstore(Map),
-    [<<(iolist_size(Data)):?int32>> | Data];
-encode(M, _) ->
-    erlang:error(?badarg({not_a_map, M})).
+    [<<(iolist_size(Data)):?int32>> | Data].
 
 decode(<<Size:?int32, Elements/binary>>, _) ->
     decode_hstore(Size, Elements, #{}).
 
-format_error({not_a_map, M}) ->
-    io_lib:format("hstore argument must be a map. instead got: ~p", [M]).
-
+type_spec() ->
+    "#{term() => term()}".
 
 %%
 

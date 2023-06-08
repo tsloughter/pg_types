@@ -4,7 +4,8 @@
 
 -export([init/1,
          encode/2,
-         decode/2]).
+         decode/2,
+         type_spec/0]).
 
 -include("pg_types.hrl").
 -include("pg_protocol.hrl").
@@ -25,3 +26,6 @@ decode(Bin, #type_info{config=[]}) ->
     Bin;
 decode(Bin, #type_info{config={Module, _, DecodeOptions}}) ->
     Module:decode(Bin, DecodeOptions).
+
+type_spec() ->
+    "iolist() | list() | map()".

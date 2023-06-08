@@ -4,7 +4,8 @@
 
 -export([init/1,
          encode/2,
-         decode/2]).
+         decode/2,
+         type_spec/0]).
 
 -include("pg_protocol.hrl").
 
@@ -16,3 +17,6 @@ encode({B1, B2, B3, B4, B5, B6}, _) ->
 
 decode(<<B1, B2, B3, B4, B5, B6>>, _) ->
     {B1, B2, B3, B4, B5, B6}.
+
+type_spec() ->
+    "{B1, B2, B3, B4, B5, B6}".

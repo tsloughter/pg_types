@@ -4,7 +4,8 @@
 
 -export([init/1,
          encode/2,
-         decode/2]).
+         decode/2,
+         type_spec/0]).
 
 -include("pg_protocol.hrl").
 
@@ -17,6 +18,9 @@ encode(Val, _) when is_list(Val) ->
 
 decode(<<_Lexemes:?int32, Words/binary>>, _) ->
     decode_tsvector_values(Words).
+
+type_spec() ->
+    "[{Word::binary(), Positions::[{Position::integer(), Weight::'A' | 'B' | 'C' | null}]}]".
 
 %%
 

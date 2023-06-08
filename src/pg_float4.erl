@@ -4,7 +4,8 @@
 
 -export([init/1,
          encode/2,
-         decode/2]).
+         decode/2,
+         type_spec/0]).
 
 -include("pg_protocol.hrl").
 -include("pg_types.hrl").
@@ -21,18 +22,21 @@ encode(Int, _) when is_integer(Int) ->
     <<4:?int32, (Int * 1.0):?float32>>;
 encode(Float, _) when is_float(Float) ->
     <<4:?int32, Float:?float32>>;
-encode(nan, _) ->
+encode('NaN', _) ->
     [<<4:?int32>>, ?NAN];
-encode(plus_infinity, _) ->
+encode(infinity, _) ->
     [<<4:?int32>>, ?POS_INF];
-encode(minus_infinity, _) ->
+encode('-infinity', _) ->
     [<<4:?int32>>, ?NEG_INF].
 
 decode(<<Float:?float32>>, _) ->
     Float;
 decode(?POS_INF,  _) ->
-    plus_infinity;
+    infinity;
 decode(?NEG_INF, _) ->
-    minus_infinity;
+    '-infinity';
 decode(?NAN_PATTERN, _) ->
-    nan.
+    'NaN'.
+
+type_spec() ->
+    "float() | infinity | '-infinity' | 'NaN'".

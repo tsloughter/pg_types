@@ -4,7 +4,8 @@
 
 -export([init/1,
          encode/2,
-         decode/2]).
+         decode/2,
+         type_spec/0]).
 
 -include("pg_protocol.hrl").
 
@@ -38,20 +39,8 @@ decode_date(N) ->
     Month = (Q3 + 10) rem 12 + 1,
     {Year, Month, Day}.
 
-encode_date({Y, M, D}) ->
-    M2 = case M > 2 of
-        true ->
-            M + 1;
-        false ->
-            M + 13
-    end,
-    Y2 = case M > 2 of
-        true ->
-            Y + 4800;
-        false ->
-            Y + 4799
-    end,
-    C = Y2 div 100,
-    J1 = Y2 * 365 - 32167,
-    J2 = J1 + (Y2 div 4 - C + C div 4),
-    J2 + 7834 * M2 div 256 + D.
+encode_date(Date) ->
+    calendar:date_to_gregorian_days(Date) - ?POSTGRESQL_GD_EPOCH.
+
+type_spec() ->
+    "{Year::integer() >= 0, Month::1..12, Day::1..31}".

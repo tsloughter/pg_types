@@ -4,7 +4,8 @@
 
 -export([init/1,
          encode/2,
-         decode/2]).
+         decode/2,
+         type_spec/0]).
 
 -include("pg_protocol.hrl").
 
@@ -20,6 +21,12 @@ encode(Numeric, _) ->
 
 decode(Numeric, _) ->
     decode_numeric_bin(Numeric).
+
+%% TODO: it looks like encode/decode forms of nan and infinity don't match
+type_spec() ->
+    "number() | 'NaN'".
+
+%%
 
 encode_numeric('NaN') ->
     <<0:16/unsigned, 0:16, 16#C000:16/unsigned, 0:16/unsigned>>;
@@ -96,6 +103,10 @@ parse_unsigned(<<"infinity">>) ->
 parse_unsigned(<<"snan">>) ->
     {sNaN, 0};
 parse_unsigned(<<"nan">>) ->
+    {qNaN, 0};
+parse_unsigned(<<"sNaN">>) ->
+    {sNaN, 0};
+parse_unsigned(<<"NaN">>) ->
     {qNaN, 0};
 parse_unsigned(Bin) ->
     {Int, Rest} = parse_digits(Bin, []),

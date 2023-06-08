@@ -7,21 +7,23 @@
          format_error/1,
          lookup_type_info/2,
          update/3,
-         update/4]).
+         update_map/3]).
 
 -include_lib("pg_types.hrl").
 
 -type oid() :: integer().
--type error() :: {badarg, {module(), term()}}.
 -type parameters() :: #{binary() => binary()}.
-
--export_type([oid/0,
-              error/0,
-              parameters/0]).
 
 -type typsend() :: binary().
 -type type_info() :: #type_info{}.
 -type opts() :: term().
+-type encoding_error() :: #{error := atom(),
+                            value := term(),
+                            type_info := type_info()}.
+
+-export_type([oid/0,
+              encoding_error/0,
+              parameters/0]).
 
 -callback init(map()) -> {[typsend()], opts()}.
 
@@ -29,16 +31,24 @@
 -callback encode(term(), type_info()) -> iodata().
 -callback decode(binary(), type_info()) -> term().
 
--callback format_error(term()) -> string().
+%% returns a string representation of the Erlang type spec accepted for encoding
+-callback type_spec() -> string().
 
--optional_callbacks([format_error/1]).
 
 -ignore_xref([{decode, 3}, {behaviour_info, 1},
               {encode, 3}, {encode, 2}, {update, 3}]).
 
 -spec encode(term(), type_info()) -> iodata().
 encode(Value, TypeInfo=#type_info{module=Module}) ->
-    Module:encode(Value, TypeInfo).
+    try
+        Module:encode(Value, TypeInfo)
+    catch
+        error:function_clause ->
+            erlang:error(#{error => badarg_encoding,
+                           module => ?MODULE,
+                           value => Value,
+                           type_info => TypeInfo})
+    end.
 
 -spec decode(binary(), type_info()) -> term().
 decode(Value, TypeInfo=#type_info{module=Module}) ->
@@ -52,26 +62,40 @@ encode(Pool, Value, Oid) ->
 decode(Pool, Value, Oid) ->
     decode(Value, lookup_type_info(Pool, Oid)).
 
--spec format_error(error()) -> string().
-format_error({badarg, {Module, Reason}}) ->
-    Module:format_error(Reason).
+-spec format_error(encoding_error() | term()) -> string().
+format_error(#{error := badarg_encoding,
+               value := Value,
+               type_info := #type_info{name=Name,
+                                       module=Module}}) ->
+    io_lib:format("Error encoding type ~s. Expected, ~s. Got, ~p.", [Name,
+                                                                     Module:type_spec(),
+                                                                     Value]);
+format_error(Error) ->
+    io_lib:format("Unknown error ~p", [Error]).
 
--spec update(atom(), [type_info()], map()) -> persistent_term.
+-spec update(atom(), [type_info()], map()) -> ok.
 update(Pool, TypeInfos, Parameters) ->
-    update(Pool, TypeInfos, Parameters, persistent_term).
+    Types = update_map(TypeInfos, Parameters, #{}),
+    maps:map(fun(Oid, TypeInfo) ->
+                     persistent_term:put({?MODULE, Pool, Oid}, TypeInfo)
+             end, Types),
+    ok.
 
--spec update(atom(), [type_info()], map(), map() | persistent_term) -> map() | persistent_term.
-update(Pool, TypeInfos, Parameters, ToUpdate) ->
+-spec update_map([type_info()], map(), map()) -> map().
+update_map(TypeInfos, Parameters, ToUpdate) ->
     {ok, Modules} = application:get_key(pg_types, modules),
     Modules1 = Modules ++ application:get_env(pg_types, modules, []),
-    lists:foldl(fun(Module, Acc) ->
-                        add_type(Pool, Module, TypeInfos, Parameters, Acc)
-                end, ToUpdate, Modules1).
+    Result = lists:foldl(fun(Module, Acc) ->
+                                 add_type(Module, TypeInfos, Parameters, Acc)
+                         end, ToUpdate, Modules1),
+    maps:map(fun(_K, TypeInfo) ->
+                     maybe_update_subtypes(Result, TypeInfo)
+             end, Result).
 
-add_type(Pool, Module, TypeInfos, Parameters, ToUpdate) ->
+add_type(Module, TypeInfos, Parameters, ToUpdate) ->
     try Module:init(Parameters) of
         {TypeSends, Config} ->
-            update_for_typesends(Module, Config, TypeSends, Pool, TypeInfos, ToUpdate)
+            update_for_typesends(Module, Config, TypeSends, TypeInfos, ToUpdate)
     catch
         _:_ ->
             %% expected for modules that aren't for encode/decode
@@ -89,16 +113,27 @@ lookup_type_info(Pool, Oid) ->
             TypeInfo
     end.
 
-update_for_typesends(Module, Config, TypeSends, Pool, TypeInfos, ToUpdate) ->
+update_for_typesends(Module, Config, TypeSends, TypeInfos, Map) ->
     lists:foldl(fun(TypeSend, Acc) ->
-                    lists:foldl(fun(TypeInfo, Acc1) ->
-                                        update_entry(Pool, TypeInfo#type_info{module=Module,
-                                                                              config=Config}, Acc1)
-                                end, Acc,  lookup_typsends(TypeInfos, TypeSend))
-                end, ToUpdate, TypeSends).
+                    lists:foldl(fun(TypeInfo=#type_info{oid=Oid}, Acc1) ->
+                                        Acc1#{Oid => TypeInfo#type_info{module=Module,
+                                                                        config=Config}}
+                                end, Acc, lookup_typsends(TypeInfos, TypeSend))
+                end, Map, TypeSends).
 
-update_entry(_Pool, TypeInfo=#type_info{oid=Oid}, ToUpdate) when is_map(ToUpdate) ->
-    ToUpdate#{Oid => TypeInfo};
-update_entry(Pool, TypeInfo=#type_info{oid=Oid}, ToUpdate=persistent_term) ->
-    persistent_term:put({?MODULE, Pool, Oid}, TypeInfo),
-    ToUpdate.
+maybe_update_subtypes(_Map, unknown_oid) ->
+    unknown_oid;
+maybe_update_subtypes(Map, TypeInfo) ->
+    TypeInfo1 = maybe_add_elem_type(Map, TypeInfo),
+    maybe_add_comp_types(Map, TypeInfo1).
+
+maybe_add_elem_type(_, T=#type_info{elem_oid=0}) ->
+    T;
+maybe_add_elem_type(Map, T=#type_info{elem_oid=ElemOid}) ->
+    T#type_info{elem_type=maybe_update_subtypes(Map, maps:get(ElemOid, Map, unknown_oid))}.
+
+maybe_add_comp_types(_, T=#type_info{comp_oids=[]}) ->
+    T;
+maybe_add_comp_types(Map, T=#type_info{comp_oids=CompOids}) ->
+    CompTypes = [maybe_update_subtypes(Map, maps:get(CompOid, Map, unknown_oid)) || CompOid <- CompOids],
+    T#type_info{comp_types=CompTypes}.

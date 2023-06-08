@@ -4,7 +4,8 @@
 
 -export([init/1,
          encode/2,
-         decode/2]).
+         decode/2,
+         type_spec/0]).
 
 -include("pg_protocol.hrl").
 
@@ -19,3 +20,6 @@ encode(Text, _) ->
 
 decode(Text, _) ->
     Text.
+
+type_spec() ->
+    "iolist()".

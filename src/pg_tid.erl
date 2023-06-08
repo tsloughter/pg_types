@@ -4,7 +4,8 @@
 
 -export([init/1,
          encode/2,
-         decode/2]).
+         decode/2,
+         type_spec/0]).
 
 -include("pg_protocol.hrl").
 
@@ -16,3 +17,6 @@ encode({Block, Tuple}, _) ->
 
 decode(<<Block:?uint32, Tuple:?uint16>>, _) ->
     {Block, Tuple}.
+
+type_spec() ->
+    "{integer(), integer()}".
