@@ -41,7 +41,7 @@ decode(Uuid, #type_info{config=binary}) ->
 decode(<<U0:32, U1:16, U2:16, U3:16, U4:48>>, #type_info{config=string}) ->
     Format = "~8.16.0b-~4.16.0b-~4.16.0b-~4.16.0b-~12.16.0b",
     iolist_to_binary(io_lib:format(Format, [U0, U1, U2, U3, U4]));
-decode(<<Uuid:128>>, #type_info{config=integer}) ->
+decode(<<Uuid:?int128>>, #type_info{config=integer}) ->
     Uuid.
 
 type_spec() ->
