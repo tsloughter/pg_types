@@ -16,10 +16,7 @@ codec(Mod, Opts, Data, Canonical) ->
     {_, Config} = Mod:init(Opts),
     TypeInfo = #type_info{config = Config},
     <<Size:32, Encoded:Size/binary>> = iolist_to_binary(Mod:encode(Data, TypeInfo)),
-    ?assertEqual(Canonical(Data), Canonical(Mod:decode(Encoded, TypeInfo)),
-                 {Mod, Opts}),
-    true.
-
+    Canonical(Data) =:= Canonical(Mod:decode(Encoded, TypeInfo)).
 
 %%
 %% Generators

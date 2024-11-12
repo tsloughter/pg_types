@@ -16,6 +16,6 @@ prop_float8_codec() ->
 float64() ->
     proper_types:frequency(
       [{85, proper_types:float()},
-       {5, plus_infinity},
-       {5, minus_infinity},
-       {5, nan}]).
+       {5, 'NaN'},
+       {5, '-infinity'},
+       {5, plus_infinity}]).
