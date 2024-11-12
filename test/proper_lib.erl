@@ -3,7 +3,7 @@
 -export([codec/3, codec/4]).
 
 -export([int16/0, int32/0, int64/0,
-         date_gen/0, int_time_gen/0]).
+         date_gen/0, int_time_gen/0, utc_offset_gen/0]).
 
 -include_lib("proper/include/proper.hrl").
 -include_lib("stdlib/include/assert.hrl").
@@ -38,6 +38,10 @@ date_gen() ->
         proper_types:integer(1, 12),
         proper_types:integer(1, 31)},
        calendar:valid_date(Date)).
+
+utc_offset_gen() ->
+    {proper_types:integer(-15, 15),
+     proper_types:integer(0, 59)}.
 
 int_time_gen() ->
     {proper_types:integer(0, 23),
