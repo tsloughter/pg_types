@@ -7,7 +7,6 @@
          decode/2,
          type_spec/0,
          encode_timestamp/1,
-         decode_timestamp/1,
          decode_timestamp/2]).
 
 -include("pg_types.hrl").
@@ -61,10 +60,6 @@ encode_timestamp({{Year, Month, Day}, {Hours, Minutes, Seconds}}) when is_float(
     (Secs * 1000000) + US;
 encode_timestamp(SystemTime) when is_integer(SystemTime) ->
     SystemTime + ((62167219200 - ?POSTGRESQL_GS_EPOCH) * 1000000).
-
--spec decode_timestamp(binary()) -> datetime().
-decode_timestamp(Bin) ->
-    decode_timestamp(Bin, []).
 
 -spec decode_timestamp(binary(), config() | []) -> datetime().
 decode_timestamp(<<16#7FFFFFFFFFFFFFFF:?int64>>, _) -> infinity;
