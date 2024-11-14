@@ -1,3 +1,4 @@
+%% Question: should this be pg_timestamptz
 -module(pg_timestampz).
 
 -behaviour(pg_types).
@@ -12,6 +13,9 @@
 init(_Opts) ->
     {[<<"timestamptz_send">>], []}.
 
+
+encode({{Year, Month, Day}, {Hour, Minute, Second}, UtcOffset}, TypeInfo) ->
+    encode({{Year, Month, Day}, {Hour + UtcOffset, Minute, Second}}, TypeInfo);
 encode(Timestamp, _TypeInfo) ->
     <<8:?int32, (pg_timestamp:encode_timestamp(Timestamp)):?int64>>.
 
@@ -19,4 +23,4 @@ decode(Bin, _TypeInfo) ->
     pg_timestamp:decode_timestamp(Bin, []).
 
 type_spec() ->
-    pg_timestamp:type_spec().
+    "{{Year::integer(), Month::1..12, Day::1..31}, {Hours::integer(), Minutes::integer(), Seconds::integer() | float()}, UtcOffset::integer()}".
