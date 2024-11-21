@@ -43,11 +43,17 @@ encode(Value, TypeInfo=#type_info{module=Module}) ->
     try
         Module:encode(Value, TypeInfo)
     catch
-        error:function_clause ->
-            erlang:error(#{error => badarg_encoding,
-                           module => ?MODULE,
-                           value => Value,
-                           type_info => TypeInfo})
+        error:function_clause:Stacktrace ->
+            erlang:raise(error, #{error => badarg_encoding,
+                                  module => ?MODULE,
+                                  value => Value,
+                                  type_info => TypeInfo}, Stacktrace);
+        error:badarg:Stacktrace ->
+            erlang:raise(error, #{error => badarg_encoding,
+                                  module => ?MODULE,
+                                  value => Value,
+                                  type_info => TypeInfo}, Stacktrace)
+
     end.
 
 -spec decode(binary(), type_info()) -> term().
