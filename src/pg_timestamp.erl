@@ -64,6 +64,10 @@ encode_timestamp(SystemTime) when is_integer(SystemTime) ->
 -spec decode_timestamp(binary(), config() | []) -> datetime().
 decode_timestamp(<<16#7FFFFFFFFFFFFFFF:?int64>>, _) -> infinity;
 decode_timestamp(<<-16#8000000000000000:?int64>>, _) -> '-infinity';
+decode_timestamp(<<Timestamp:?int64>>, rfc3339_bin) ->
+    MS = Timestamp + (?POSTGRESQL_GS_EPOCH * 1000000) - (62167219200 * 1000000),
+    Dtz = calendar:system_time_to_rfc3339(MS, [{unit, microsecond}, {time_designator, $\s}, {offset, ""}]),
+    list_to_binary(Dtz);
 decode_timestamp(<<Timestamp:?int64>>, float_system_time_seconds) ->
     %% Note: We do this instead of just dividing by 1000000 to not end up with float inaccuracies
     USecs = Timestamp rem 1000000,

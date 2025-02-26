@@ -1,14 +1,9 @@
-{application, pg_types,
- [{description, "Erlang library for encoding and decoding postgres data types"},
-  {vsn, git},
-  {registered, []},
-  {applications,
-   [kernel,
-    stdlib
-   ]},
-  {env,[]},
-  {modules, []},
-
-  {licenses, ["Apache 2.0"]},
-  {links, [{"Github", "https://github.com/tsloughter/pg_types"}]}
- ]}.
+{application,pg_types,
+             [{description,"Erlang library for encoding and decoding postgres data types"},
+              {vsn,"1033dbd-dirty"},
+              {registered,[]},
+              {applications,[kernel,stdlib]},
+              {env,[]},
+              {modules,[]},
+              {licenses,["Apache 2.0"]},
+              {links,[{"Github","https://github.com/tsloughter/pg_types"}]}]}.
