@@ -5,7 +5,7 @@
 negative_offset_timestamptz_test() ->
     ?assertEqual(
         proper_lib:encode_decode(
-            pg_timestampz,
+            pg_timestamptz,
             [],
             {{2024, 3, 1}, {1, 0, 0}, {-5, 15}}
         ),
@@ -15,7 +15,7 @@ negative_offset_timestamptz_test() ->
 positive_offset_timestamptz_test() ->
     ?assertEqual(
         proper_lib:encode_decode(
-            pg_timestampz,
+            pg_timestamptz,
             [],
             {{2024, 3, 1}, {1, 0, 0}, {5, 15}}
         ),
@@ -25,7 +25,7 @@ positive_offset_timestamptz_test() ->
 no_offset_timestamptz_test() ->
     ?assertEqual(
         proper_lib:encode_decode(
-            pg_timestampz,
+            pg_timestamptz,
             [],
             {{2024, 3, 1}, {1, 0, 0}, {0, 0}}
         ),

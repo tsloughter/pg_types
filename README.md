@@ -43,9 +43,15 @@ To configure if enums should be converted to atoms, set `enum_config` in `pg_typ
 
 ### Datetimes
 
+#### Timestamps
 Timestamps can be returned as Erlang system time in seconds (as an integer or float):
 
 `{pg_types, [{timestamp_config, float_system_time_seconds | integer_system_time_seconds}]}`
+
+Timestamps with time zone can be returned as Erlang system time in rfc3339
+binary:
+
+`{pg_types, [{timestamptz_config, rfc3339_bin}]}`
 
 Future plans include allowing this to be set per-query instead of globally.
 
