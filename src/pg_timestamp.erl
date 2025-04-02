@@ -49,6 +49,9 @@ encode_timestamp(infinity) ->
     16#7FFFFFFFFFFFFFFF;
 encode_timestamp('-infinity') ->
     -16#8000000000000000;
+% A timestamp with a positive offset is a time in the future, compared to UTC,
+% and therefore you need to subtract the hour and minutes to generate a UTC
+% time. Please see 'test/timestamptz_tests.erl' for some examples.
 encode_timestamp({{Year, Month, Day}, {Hour, Minute, Seconds}, {HourOffset, MinuteOffset}}) when is_integer(Seconds), MinuteOffset >= 0 ->
     Sign = determine_sign(HourOffset),
     OffsetFromHours = calendar:time_to_seconds({abs(HourOffset), 0, 0}),
