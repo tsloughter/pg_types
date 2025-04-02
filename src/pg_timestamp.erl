@@ -49,16 +49,16 @@ encode_timestamp(infinity) ->
     16#7FFFFFFFFFFFFFFF;
 encode_timestamp('-infinity') ->
     -16#8000000000000000;
-encode_timestamp({{Year, Month, Day}, {Hour, Minute, Seconds}, {HourOffset, MinuteOffset}}) when is_integer(Seconds) ->
+encode_timestamp({{Year, Month, Day}, {Hour, Minute, Seconds}, {HourOffset, MinuteOffset}}) when is_integer(Seconds), MinuteOffset >= 0 ->
     Sign = determine_sign(HourOffset),
     OffsetFromHours = calendar:time_to_seconds({abs(HourOffset), 0, 0}),
     OffsetFromMinutes = calendar:time_to_seconds({0, MinuteOffset, 0}),
     DatetimeSeconds = calendar:datetime_to_gregorian_seconds({{Year, Month, Day}, {Hour, Minute, Seconds}}) - ?POSTGRESQL_GS_EPOCH,
-    (DatetimeSeconds + OffsetFromHours * Sign + OffsetFromMinutes) * 1000000;
+    (DatetimeSeconds + OffsetFromHours * Sign + OffsetFromMinutes * Sign) * 1000000;
 encode_timestamp(Datetime={{_, _, _}, {_, _, Seconds}}) when is_integer(Seconds)->
     Secs = calendar:datetime_to_gregorian_seconds(Datetime) - ?POSTGRESQL_GS_EPOCH,
     Secs * 1000000;
-encode_timestamp({{Year, Month, Day}, {Hours, Minutes, Seconds}, {HourOffset, MinuteOffset}}) when is_float(Seconds) ->
+encode_timestamp({{Year, Month, Day}, {Hours, Minutes, Seconds}, {HourOffset, MinuteOffset}}) when is_float(Seconds), MinuteOffset >= 0 ->
     Sign = determine_sign(HourOffset),
     OffsetFromHours = calendar:time_to_seconds({abs(HourOffset), 0, 0}),
     OffsetFromMinutes = calendar:time_to_seconds({0, MinuteOffset, 0}),
@@ -66,7 +66,7 @@ encode_timestamp({{Year, Month, Day}, {Hours, Minutes, Seconds}, {HourOffset, Mi
     US = trunc((Seconds - IntegerSeconds) * 1000000),
     DatetimeSeconds = calendar:datetime_to_gregorian_seconds({{Year, Month, Day},
                                                    {Hours, Minutes, IntegerSeconds}}) - ?POSTGRESQL_GS_EPOCH,
-    ((DatetimeSeconds + OffsetFromHours * Sign + OffsetFromMinutes) * 1000000) + US;
+    ((DatetimeSeconds + OffsetFromHours * Sign + OffsetFromMinutes * Sign) * 1000000) + US;
 encode_timestamp({{Year, Month, Day}, {Hours, Minutes, Seconds}}) when is_float(Seconds)->
     IntegerSeconds = trunc(Seconds),
     US = trunc((Seconds - IntegerSeconds) * 1000000),

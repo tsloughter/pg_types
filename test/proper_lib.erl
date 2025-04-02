@@ -1,6 +1,6 @@
 -module(proper_lib).
 
--export([codec/3, codec/4]).
+-export([codec/3, codec/4, encode_decode/3]).
 
 -export([int16/0, int32/0, int64/0,
          date_gen/0, int_time_gen/0, utc_offset_gen/0]).
@@ -12,11 +12,23 @@
 codec(Mod, Opts, Data) ->
     codec(Mod, Opts, Data, fun(V) -> V end).
 
-codec(Mod, Opts, Data, Canonical) ->
+% Encode and then decode the Input
+encode_decode(Mod, Opts, Input) ->
     {_, Config} = Mod:init(Opts),
     TypeInfo = #type_info{config = Config},
-    <<Size:32, Encoded:Size/binary>> = iolist_to_binary(Mod:encode(Data, TypeInfo)),
-    Canonical(Data) =:= Canonical(Mod:decode(Encoded, TypeInfo)).
+    <<Size:32, Encoded:Size/binary>> = iolist_to_binary(Mod:encode(Input, TypeInfo)),
+    Mod:decode(Encoded, TypeInfo).
+
+% Passing a function will apply that function to the input Data and
+% encoded/decoded Data before comparison.
+codec(Mod, Opts, Data, Canonical) when is_function(Canonical) ->
+    Decoded = encode_decode(Mod, Opts, Data),
+    Canonical(Data) =:= Canonical(Decoded);
+% Passing anything else will simply compare the Output with the encoded/decoded
+% Input
+codec(Mod, Opts, Data, Output) ->
+    Decoded = encode_decode(Mod, Opts, Data),
+    Output =:= Decoded.
 
 %%
 %% Generators
