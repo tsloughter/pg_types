@@ -19,4 +19,4 @@ decode(Bin, _TypeInfo) ->
     pg_timestamp:decode_timestamp(Bin, []).
 
 type_spec() ->
-    pg_timestamp:type_spec().
+    "{{Year::integer(), Month::1..12, Day::1..31}, {Hours::integer(), Minutes::integer(), Seconds::integer() | float()}, {HourOffset::integer(), MinuteOffset::pos_integer()}}".

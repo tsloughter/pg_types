@@ -49,9 +49,27 @@ encode_timestamp(infinity) ->
     16#7FFFFFFFFFFFFFFF;
 encode_timestamp('-infinity') ->
     -16#8000000000000000;
+% A timestamp with a positive offset is a time in the future, compared to UTC,
+% and therefore you need to subtract the hour and minutes to generate a UTC
+% time. Please see 'test/timestamptz_tests.erl' for some examples.
+encode_timestamp({{Year, Month, Day}, {Hour, Minute, Seconds}, {HourOffset, MinuteOffset}}) when is_integer(Seconds), MinuteOffset >= 0 ->
+    Sign = determine_sign(HourOffset),
+    OffsetFromHours = calendar:time_to_seconds({abs(HourOffset), 0, 0}),
+    OffsetFromMinutes = calendar:time_to_seconds({0, MinuteOffset, 0}),
+    DatetimeSeconds = calendar:datetime_to_gregorian_seconds({{Year, Month, Day}, {Hour, Minute, Seconds}}) - ?POSTGRESQL_GS_EPOCH,
+    (DatetimeSeconds + OffsetFromHours * Sign + OffsetFromMinutes * Sign) * 1000000;
 encode_timestamp(Datetime={{_, _, _}, {_, _, Seconds}}) when is_integer(Seconds)->
     Secs = calendar:datetime_to_gregorian_seconds(Datetime) - ?POSTGRESQL_GS_EPOCH,
     Secs * 1000000;
+encode_timestamp({{Year, Month, Day}, {Hours, Minutes, Seconds}, {HourOffset, MinuteOffset}}) when is_float(Seconds), MinuteOffset >= 0 ->
+    Sign = determine_sign(HourOffset),
+    OffsetFromHours = calendar:time_to_seconds({abs(HourOffset), 0, 0}),
+    OffsetFromMinutes = calendar:time_to_seconds({0, MinuteOffset, 0}),
+    IntegerSeconds = trunc(Seconds),
+    US = trunc((Seconds - IntegerSeconds) * 1000000),
+    DatetimeSeconds = calendar:datetime_to_gregorian_seconds({{Year, Month, Day},
+                                                   {Hours, Minutes, IntegerSeconds}}) - ?POSTGRESQL_GS_EPOCH,
+    ((DatetimeSeconds + OffsetFromHours * Sign + OffsetFromMinutes * Sign) * 1000000) + US;
 encode_timestamp({{Year, Month, Day}, {Hours, Minutes, Seconds}}) when is_float(Seconds)->
     IntegerSeconds = trunc(Seconds),
     US = trunc((Seconds - IntegerSeconds) * 1000000),
@@ -88,3 +106,10 @@ add_usecs(Secs, 0) ->
     Secs;
 add_usecs(Secs, USecs) ->
     Secs + (USecs / 1000000).
+
+% When the hour offset is positive, you are in the future and therefore
+% need to subtract the hours to get to UTC.
+determine_sign(HourOffset) when HourOffset >= 0 ->
+    -1;
+determine_sign(_) ->
+    1.

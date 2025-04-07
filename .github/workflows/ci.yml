@@ -37,6 +37,9 @@ jobs:
     - name: Compile
       run: rebar3 compile
 
+    - name: Eunit tests
+      run: rebar3 eunit
+
     - name: Proper tests
       run: rebar3 as test proper
 
