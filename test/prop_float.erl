@@ -18,4 +18,4 @@ float64() ->
       [{85, proper_types:float()},
        {5, 'NaN'},
        {5, '-infinity'},
-       {5, plus_infinity}]).
+       {5, infinity}]).
