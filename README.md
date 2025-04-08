@@ -33,9 +33,44 @@ To configure if enums should be converted to atoms, set `enum_config` in `pg_typ
 
 ### Datetimes
 
+#### Timestamps
 Timestamps can be returned as Erlang system time in seconds (as an integer or float):
 
 `{pg_types, [{timestamp_config, float_system_time_seconds | integer_system_time_seconds}]}`
+
+Future plans include allowing this to be set per-query instead of globally.
+
+#### Timestamps with time zone
+Timestamps with time zone can be returned as Erlang system time in rfc3339 binary:
+
+`{pg_types, [{timestampz_config, rfc3339_bin}]}`
+
+```
+CREATE TABLE public.app_version (
+    id bigserial NOT NULL,
+    ...
+    created_at timestamptz DEFAULT CURRENT_TIMESTAMP NOT NULL, -- 2025-02-21 08:33:16.268288+08:00
+    CONSTRAINT app_version_pkey PRIMARY KEY (id)
+);
+```
+```
+(imboy@imboy.local)1> pgo:query("select created_at FROM app_version limit 1;").
+Without configuration timestampz_config:
+#{command => select,
+  rows =>
+      [#{<<"created_at">> =>
+             {{2025,2,25},{23,45,34.492948}}],
+  num_rows => 1}
+
+With {pg_types, [{timestampz_config, rfc3339_bin}]} the result is:
+
+#{command => select,
+  rows =>
+      [#{<<"created_at">> =>
+             <<"2025-02-26 08:45:34.493366+08:00">>}],
+  num_rows => 1}
+
+```
 
 Future plans include allowing this to be set per-query instead of globally.
 
