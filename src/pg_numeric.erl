@@ -30,6 +30,10 @@ type_spec() ->
 
 encode_numeric('NaN') ->
     <<0:16/unsigned, 0:16, 16#C000:16/unsigned, 0:16/unsigned>>;
+encode_numeric('infinity') ->
+    <<0,0,0,0,208,0,0,32>>;
+encode_numeric('-infinity') ->
+    <<0,0,0,0,240,0,0,32>>;
 encode_numeric(Float) ->
     {Sign, Coef, Exp} = parse_num(Float),
     {IntDigits, FloatDigits, Scale} = to_digits(Coef, Exp, -Exp),
@@ -192,6 +196,8 @@ zero_if_empty(Num) ->
     end.
 
 decode_numeric_bin(<<0:16/unsigned, _Weight:16, 16#C000:16/unsigned, 0:16/unsigned>>) -> 'NaN';
+decode_numeric_bin(<<0:32/unsigned,208,0,0,32>>) -> 'infinity';
+decode_numeric_bin(<<0:32/unsigned,240,0,0,32>>) -> '-infinity';
 
 decode_numeric_bin(<<Len:16/unsigned, DWeight:16/signed, Sign:16/unsigned, DScale:16/unsigned, Tail/binary>>) when Sign =:= 16#0000 orelse Sign =:= 16#4000 ->
     Len = byte_size(Tail) div 2,
