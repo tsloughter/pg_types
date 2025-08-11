@@ -15,7 +15,7 @@ init(_Opts) ->
       <<"byteasend">>, <<"unknownsend">>,
       <<"citextsend">>], []}.
 
-encode(Text, _) ->
+encode(Text, _) when is_list(Text) ; is_binary(Text) ->
     [<<(iolist_size(Text)):?int32>>, Text].
 
 decode(Text, _) ->
