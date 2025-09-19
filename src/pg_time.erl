@@ -34,10 +34,6 @@ type_spec() ->
 decode_time(<<Time:?int64>>) ->
     Seconds = Time div 1000000,
     USecs = Time rem 1000000,
-    decode_time0(Seconds, USecs);
-decode_time(<<Time:?float64>>) ->
-    Seconds = trunc(Time),
-    USecs = round((Time - Seconds) * 1000000),   % Maximum documented PostgreSQL precision is usec.
     decode_time0(Seconds, USecs).
 
 decode_time0(Seconds, USecs) ->
