@@ -39,7 +39,11 @@ decode(<<?INET6, Mask:8, 1, ?IP6_SIZE, Bin/binary>>, _) ->
 decode(<<?INET, ?MAX_IP_MASK, 0, ?IP_SIZE, Bin/binary>>, _) ->
     list_to_tuple(binary_to_list(Bin));
 decode(<<?INET6, ?MAX_IP6_MASK, 0, ?IP6_SIZE, Bin/binary>>, _) ->
-    list_to_tuple([X || <<X:16>> <= Bin]).
+    list_to_tuple([X || <<X:16>> <= Bin]);
+decode(<<?INET, Mask:8, 0, ?IP_SIZE, Bin/binary>>, _) ->
+    {list_to_tuple(binary_to_list(Bin)), Mask};
+decode(<<?INET6, Mask:8, 0, ?IP6_SIZE, Bin/binary>>, _) ->
+    {list_to_tuple([X || <<X:16>> <= Bin]), Mask}.
 
 type_spec() ->
     "{0..255, 0..255, 0..255, 0..255} | "
