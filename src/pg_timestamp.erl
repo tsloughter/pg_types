@@ -12,8 +12,12 @@
 -include("pg_types.hrl").
 -include("pg_protocol.hrl").
 
--define(POSTGRESQL_GD_EPOCH, 730485). % calendar:date_to_gregorian_days({2000,1,1}).
 -define(POSTGRESQL_GS_EPOCH, 63113904000). % calendar:datetime_to_gregorian_seconds({{2000,1,1}, {0,0,0}}).
+-define(UNIX_GS_EPOCH, 62167219200). % calendar:datetime_to_gregorian_seconds({{19790,1,1}, {0,0,0}}).
+-define(SECONDS_PER_MINUTE, 60).
+-define(SECONDS_PER_HOUR, 3600).
+-define(SECONDS_PER_DAY, 86400).
+-define(MILLION, 1_000_000).
 
 %% config options allow timestamp to return seconds since epoch as a float or integer
 %% instead of the datetime tuple format
@@ -45,54 +49,49 @@ decode(Bin, #type_info{config=Config}) ->
 type_spec() ->
     "infinity | '-infinity' | {{Year::integer(), Month::1..12, Day::1..31}, {Hours::integer(), Minutes::integer(), Seconds::integer() | float()}} | 0".
 
-encode_timestamp(infinity) ->
-    16#7FFFFFFFFFFFFFFF;
-encode_timestamp('-infinity') ->
-    -16#8000000000000000;
 % A timestamp with a positive offset is a time in the future, compared to UTC,
 % and therefore you need to subtract the hour and minutes to generate a UTC
 % time. Please see 'test/timestamptz_tests.erl' for some examples.
-encode_timestamp({{Year, Month, Day}, {Hour, Minute, Seconds}, {HourOffset, MinuteOffset}}) when is_integer(Seconds), MinuteOffset >= 0 ->
-    Sign = determine_sign(HourOffset),
-    OffsetFromHours = calendar:time_to_seconds({abs(HourOffset), 0, 0}),
-    OffsetFromMinutes = calendar:time_to_seconds({0, MinuteOffset, 0}),
-    DatetimeSeconds = calendar:datetime_to_gregorian_seconds({{Year, Month, Day}, {Hour, Minute, Seconds}}) - ?POSTGRESQL_GS_EPOCH,
-    (DatetimeSeconds + OffsetFromHours * Sign + OffsetFromMinutes * Sign) * 1000000;
-encode_timestamp(Datetime={{_, _, _}, {_, _, Seconds}}) when is_integer(Seconds)->
-    Secs = calendar:datetime_to_gregorian_seconds(Datetime) - ?POSTGRESQL_GS_EPOCH,
-    Secs * 1000000;
-encode_timestamp({{Year, Month, Day}, {Hours, Minutes, Seconds}, {HourOffset, MinuteOffset}}) when is_float(Seconds), MinuteOffset >= 0 ->
-    Sign = determine_sign(HourOffset),
-    OffsetFromHours = calendar:time_to_seconds({abs(HourOffset), 0, 0}),
-    OffsetFromMinutes = calendar:time_to_seconds({0, MinuteOffset, 0}),
-    IntegerSeconds = trunc(Seconds),
-    US = trunc((Seconds - IntegerSeconds) * 1000000),
-    DatetimeSeconds = calendar:datetime_to_gregorian_seconds({{Year, Month, Day},
-                                                   {Hours, Minutes, IntegerSeconds}}) - ?POSTGRESQL_GS_EPOCH,
-    ((DatetimeSeconds + OffsetFromHours * Sign + OffsetFromMinutes * Sign) * 1000000) + US;
-encode_timestamp({{Year, Month, Day}, {Hours, Minutes, Seconds}}) when is_float(Seconds)->
-    IntegerSeconds = trunc(Seconds),
-    US = trunc((Seconds - IntegerSeconds) * 1000000),
-    Secs = calendar:datetime_to_gregorian_seconds({{Year, Month, Day},
-                                                   {Hours, Minutes, IntegerSeconds}}) - ?POSTGRESQL_GS_EPOCH,
-    (Secs * 1000000) + US;
 encode_timestamp(SystemTime) when is_integer(SystemTime) ->
-    SystemTime + ((62167219200 - ?POSTGRESQL_GS_EPOCH) * 1000000).
+    SystemTime + ((?UNIX_GS_EPOCH - ?POSTGRESQL_GS_EPOCH) * ?MILLION);
+encode_timestamp({Date, Time, {HourOffset, MinuteOffset}}) when MinuteOffset >= 0 ->
+    Sign = determine_sign(HourOffset),
+    OffsetSecs = abs(HourOffset) * ?SECONDS_PER_HOUR + MinuteOffset * ?SECONDS_PER_MINUTE,
+    datetime_to_micros(Date, Time, Sign * OffsetSecs);
+encode_timestamp({Date, Time}) ->
+    datetime_to_micros(Date, Time, 0);
+encode_timestamp(infinity) ->
+    16#7FFFFFFFFFFFFFFF;
+encode_timestamp('-infinity') ->
+    -16#8000000000000000.
+
+datetime_to_micros({Year, Month, Day}, {Hours, Minutes, Seconds}, Offset) ->
+    %% if Seconds are integer(), we'll just get zero micros
+    IntegerSeconds = trunc(Seconds),
+    USecs = trunc((Seconds - IntegerSeconds) * ?MILLION),
+    %% note that we want to avoid rebuilding the time tuple here
+    Secs = ?SECONDS_PER_DAY * calendar:date_to_gregorian_days(Year, Month, Day) + time_to_seconds(Hours, Minutes, IntegerSeconds) - ?POSTGRESQL_GS_EPOCH,
+    ((Secs + Offset) * ?MILLION) + USecs.
+
+%% the calendar module only has the arity-1 version of this function
+time_to_seconds(H, M, S) when is_integer(H), is_integer(M), is_integer(S) ->
+    H * ?SECONDS_PER_HOUR + M * ?SECONDS_PER_MINUTE + S.
+
 
 -spec decode_timestamp(binary(), config() | []) -> datetime().
 decode_timestamp(<<16#7FFFFFFFFFFFFFFF:?int64>>, _) -> infinity;
 decode_timestamp(<<-16#8000000000000000:?int64>>, _) -> '-infinity';
 decode_timestamp(<<Timestamp:?int64>>, float_system_time_seconds) ->
     %% Note: We do this instead of just dividing by 1000000 to not end up with float inaccuracies
-    USecs = Timestamp rem 1000000,
-    ((Timestamp div 1000000) + ?POSTGRESQL_GS_EPOCH) - 62167219200 + (USecs / 1000000);
+    USecs = Timestamp rem ?MILLION,
+    (Timestamp div ?MILLION) + ?POSTGRESQL_GS_EPOCH - ?UNIX_GS_EPOCH + (USecs / ?MILLION);
 decode_timestamp(<<Timestamp:?int64>>, integer_system_time_seconds) ->
-    ((Timestamp div 1000000) + ?POSTGRESQL_GS_EPOCH) - 62167219200;
+    (Timestamp div ?MILLION) + ?POSTGRESQL_GS_EPOCH - ?UNIX_GS_EPOCH;
 decode_timestamp(<<Timestamp:?int64>>, integer_system_time_microseconds) ->
-    Timestamp + (?POSTGRESQL_GS_EPOCH * 1000000) - (62167219200 * 1000000);
+    Timestamp + (?POSTGRESQL_GS_EPOCH - ?UNIX_GS_EPOCH) * ?MILLION;
 decode_timestamp(<<Timestamp:?int64>>, _) ->
-    TimestampSecs = Timestamp div 1000000,
-    USecs = Timestamp rem 1000000,
+    TimestampSecs = Timestamp div ?MILLION,
+    USecs = Timestamp rem ?MILLION,
     decode_timestamp0(TimestampSecs, USecs).
 
 decode_timestamp0(Secs, USecs) ->
@@ -105,7 +104,7 @@ add_usecs(Secs, 0) ->
     %% leave seconds as an integer if there are no usecs
     Secs;
 add_usecs(Secs, USecs) ->
-    Secs + (USecs / 1000000).
+    Secs + (USecs / ?MILLION).
 
 % When the hour offset is positive, you are in the future and therefore
 % need to subtract the hours to get to UTC.
