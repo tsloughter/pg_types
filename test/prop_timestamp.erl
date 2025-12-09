@@ -7,11 +7,11 @@ prop_int_sec_codec() ->
 
 prop_tz_int_sec_codec() ->
     ?FORALL(Val, int_timestamp(),
-            proper_lib:codec(pg_timestampz, [], Val)).
+            proper_lib:codec(pg_timestamptz, [], Val)).
 
 prop_tz_offset_codec() ->
     ?FORALL(Val, utc_offset_timestamp(),
-            proper_lib:codec(pg_timestampz, [], Val, apply_offset(Val))).
+            proper_lib:codec(pg_timestamptz, [], Val, apply_offset(Val))).
 
 apply_offset({{Year, Month, Day}, {Hour, Minute, Second}, {HourOffset, MinuteOffset}}) ->
     Sign = case HourOffset >= 0 of
