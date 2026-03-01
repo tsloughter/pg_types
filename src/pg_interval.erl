@@ -7,20 +7,30 @@
          decode/2,
          type_spec/0]).
 
+-include("pg_types.hrl").
 -include("pg_protocol.hrl").
 
 -define(USECS_PER_SEC, 1000000).
 -define(SECS_PER_MINUTE, 60).
 -define(SECS_PER_HOUR, 3600).
 
+init(#{interval_config := raw}) ->
+    {[<<"interval_send">>], raw};
 init(_Opts) ->
-    {[<<"interval_send">>], []}.
+    Config = application:get_env(pg_types, interval_config, []),
+    {[<<"interval_send">>], Config}.
 
-encode({interval, {T, D, M}}, _) ->
-    <<16:?int32, (pg_time:encode_time(T)):?int64, D:?int32, M:?int32>>;
+encode({interval, Microseconds, Days, Months}, _) when is_integer(Microseconds),
+                                                        is_integer(Days),
+                                                        is_integer(Months) ->
+    <<16:?int32, Microseconds:?int64, Days:?int32, Months:?int32>>;
+encode({interval, {T, D, M}}, TypeInfo) ->
+    encode({T, D, M}, TypeInfo);
 encode({T, D, M}, _) ->
     <<16:?int32, (pg_time:encode_time(T)):?int64, D:?int32, M:?int32>>.
 
+decode(<<Microseconds:?int64, Days:?int32, Months:?int32>>, #type_info{config=raw}) ->
+    {interval, Microseconds, Days, Months};
 decode(<<Microseconds:?int64, Days:?int32, Months:?int32>>, _) ->
     {interval, {decode_interval_time(Microseconds), Days, Months}}.
 
@@ -42,5 +52,6 @@ decode_interval_time(Microseconds) ->
     end.
 
 type_spec() ->
-    "{interval {{Hours::integer(), Minutes::integer(), "
+    "{interval, Microseconds::integer(), Days::integer(), Months::integer()} | "
+    "{interval, {{Hours::integer(), Minutes::integer(), "
     "Seconds::integer()}, Days::integer(), Months::integer()}}".
