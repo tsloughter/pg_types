@@ -6,8 +6,7 @@
          encode/2,
          decode/2,
          type_spec/0,
-         encode_time/1,
-         decode_time/1]).
+         encode_time/1]).
 
 -include("pg_protocol.hrl").
 
